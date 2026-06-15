@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+*.pyo
+.env
+.venv/
+venv/
+coolpc_debug_lines.txt
+coolpc_debug_raw.html

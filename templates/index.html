@@ -1,0 +1,3022 @@
+<!doctype html>
+<html lang="zh-Hant">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>CoolPC 篩選器</title>
+    <script>
+        if ("scrollRestoration" in history) {
+            history.scrollRestoration = "manual";
+        }
+        if (window.location.hash === "#results-section") {
+            const url = new URL(window.location.href);
+            url.hash = "";
+            history.replaceState(null, "", url);
+        }
+    </script>
+    <style>
+        body {
+            font-family: "Microsoft JhengHei", Arial, sans-serif;
+            margin: 24px;
+            padding-bottom: 240px;
+            background: #f7f8fa;
+            color: #222;
+        }
+
+        h1 {
+            margin-top: 0;
+        }
+
+        .card {
+            background: #fff;
+            border: 1px solid #e6e8ed;
+            border-radius: 10px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        .row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        [hidden] {
+            display: none !important;
+        }
+
+        label {
+            font-weight: 600;
+        }
+
+        input[type="text"],
+        select {
+            padding: 8px 10px;
+            border: 1px solid #ccd1d9;
+            border-radius: 8px;
+            min-width: 180px;
+        }
+
+        select.stripe option:nth-child(odd) {
+            background: #f0f3f8;
+        }
+
+        select.stripe option:nth-child(even) {
+            background: #fff;
+        }
+
+        select.stripe option:checked {
+            background: #1f6feb;
+            color: #fff;
+        }
+
+        .filter-group {
+            border: 1px dashed #d6dbe3;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .filter-group details>summary {
+            cursor: pointer;
+            font-weight: 600;
+            list-style: none;
+            user-select: none;
+        }
+
+        .filter-group details>summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .filter-group details>summary::before {
+            content: "▶ ";
+            display: inline-block;
+            font-size: 0.75em;
+            transition: transform 0.15s;
+        }
+
+        .filter-group details[open]>summary::before {
+            transform: rotate(90deg);
+        }
+
+        .filter-group details>summary .hint {
+            font-weight: 400;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .group-list-toolbar {
+            display: flex;
+            gap: 8px;
+            margin: 10px 0 8px;
+        }
+
+        .group-list-toolbar .btn {
+            padding: 5px 12px;
+            font-size: 13px;
+        }
+
+        .filter-group .group-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 4px 10px;
+            margin-top: 0;
+            max-height: 320px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .filter-group .group-list label {
+            display: block;
+            font-weight: 400;
+            margin-bottom: 0;
+            padding: 5px 8px;
+            border-radius: 4px;
+            background: #f8f9fb;
+            line-height: 1.35;
+        }
+
+        .filter-group .group-list label:hover {
+            background: #eef1f6;
+        }
+
+        .muted {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .error {
+            color: #b10000;
+            font-weight: 700;
+        }
+
+        button,
+        .btn {
+            display: inline-block;
+            border: 0;
+            border-radius: 8px;
+            padding: 9px 16px;
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: none;
+            line-height: 1.2;
+        }
+
+        button[type="submit"],
+        .btn-primary {
+            background: #1f6feb;
+            color: #fff;
+        }
+
+        button[type="submit"]:hover,
+        .btn-primary:hover {
+            background: #1659bd;
+        }
+
+        .btn-secondary {
+            background: #eef1f6;
+            color: #333;
+            border: 1px solid #ccd1d9;
+        }
+
+        .btn-secondary:hover {
+            background: #e2e7ef;
+        }
+
+        .category-row {
+            margin-bottom: 16px;
+        }
+
+        .category-row select {
+            flex: 1;
+            max-width: 480px;
+        }
+
+        .conditions-panel {
+            border: 1px solid #c5ccd6;
+            border-radius: 10px;
+            padding: 14px 16px;
+            background: #e4e9f0;
+        }
+
+        .conditions-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #c5ccd6;
+        }
+
+        .conditions-title {
+            font-weight: 700;
+            font-size: 15px;
+        }
+
+        .conditions-panel .filter-group {
+            background: #fff;
+        }
+
+        .conditions-panel .row:last-child {
+            margin-bottom: 0;
+        }
+
+        .platform-filter {
+            margin-bottom: 12px;
+        }
+
+        .platform-filter>span {
+            font-weight: 600;
+            margin-right: 10px;
+        }
+
+        .platform-opt {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-right: 8px;
+            padding: 6px 12px;
+            border-radius: 8px;
+            border: 2px solid transparent;
+            font-weight: 600;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .platform-opt input {
+            display: none;
+        }
+
+        .platform-opt.platform-all {
+            background: #fff;
+            border-color: #ccd1d9;
+            color: #333;
+        }
+
+        .platform-opt.platform-intel {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .platform-opt.platform-nvidia {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .platform-opt.platform-amd {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        .platform-opt.platform-all:has(input:checked) {
+            border-color: #666;
+            box-shadow: 0 0 0 1px #666;
+        }
+
+        .platform-opt.platform-intel:has(input:checked) {
+            border-color: #1d4ed8;
+            background: #3b82f6;
+            color: #fff;
+        }
+
+        .platform-opt.platform-nvidia:has(input:checked) {
+            border-color: #16a34a;
+            background: #22c55e;
+            color: #fff;
+        }
+
+        .platform-opt.platform-amd:has(input:checked) {
+            border-color: #dc2626;
+            background: #ef4444;
+            color: #fff;
+        }
+
+        .category-form {
+            margin-bottom: 16px;
+        }
+
+        .category-form .platform-filter {
+            margin-top: 4px;
+            margin-bottom: 0;
+        }
+
+        .conditions-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 4px;
+        }
+
+        .conditions-actions-left {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-clear {
+            background: #dc2626;
+            color: #fff;
+            border: 1px solid #dc2626;
+            margin-left: auto;
+        }
+
+        .btn-clear:hover {
+            background: #b91c1c;
+            border-color: #b91c1c;
+            color: #fff;
+        }
+
+        .category-row .btn-clear {
+            margin-left: 0;
+        }
+
+        .result-list {
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+
+        .result-list li {
+            padding: 8px 12px;
+            line-height: 1.4;
+            border-radius: 4px;
+        }
+
+        .result-list li:nth-child(odd) {
+            background: #f0f3f8;
+        }
+
+        .result-list li:nth-child(even) {
+            background: #fff;
+        }
+
+        .summary p {
+            margin: 4px 0;
+        }
+
+        .filter-hint {
+            width: 100%;
+            margin: 0 0 8px;
+            font-size: 13px;
+            color: #555;
+            line-height: 1.4;
+        }
+
+        .spec-input {
+            max-width: 140px;
+        }
+
+        .keyword-shortcuts {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+            margin: -4px 0 10px;
+            padding-left: 0;
+        }
+
+        .keyword-shortcuts .muted {
+            margin-right: 4px;
+        }
+
+        .keyword-chip {
+            padding: 5px 12px;
+            font-size: 13px;
+        }
+
+        .keyword-shortcut-note {
+            margin: 0 0 10px;
+        }
+
+        .white-filter-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 8px 16px;
+            border-radius: 8px;
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            color: #334155;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            user-select: none;
+            white-space: nowrap;
+            transition:
+                background-color 0.15s ease,
+                border-color 0.15s ease,
+                color 0.15s ease,
+                box-shadow 0.15s ease;
+        }
+
+        .white-filter-btn:hover {
+            border-color: #94a3b8;
+            background: #f8fafc;
+        }
+
+        .white-filter-btn input {
+            display: none;
+        }
+
+        .white-filter-btn:has(input:checked) {
+            background: #eff6ff;
+            border: 2px solid #2563eb;
+            color: #1d4ed8;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+        }
+
+        .white-filter-btn:has(input:checked):hover {
+            background: #dbeafe;
+            border-color: #2563eb;
+        }
+
+        .filter-summary {
+            border: 1px solid #b8c4d4;
+            border-radius: 8px;
+            background: #f0f4f9;
+            padding: 12px 14px;
+            margin: 12px 0 4px;
+        }
+
+        .filter-summary-title {
+            font-weight: 700;
+            font-size: 14px;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .filter-summary-body {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            font-size: 14px;
+        }
+
+        .filter-summary-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px 8px;
+            align-items: baseline;
+        }
+
+        .filter-summary-row .label {
+            font-weight: 600;
+            color: #444;
+            flex-shrink: 0;
+        }
+
+        .filter-summary-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        .filter-summary-chip {
+            background: #fff;
+            border: 1px solid #ccd1d9;
+            border-radius: 6px;
+            padding: 2px 8px;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+
+        .filter-summary-empty {
+            color: #888;
+            font-size: 13px;
+        }
+
+        .result-group {
+            margin-bottom: 18px;
+        }
+
+        .result-group-header {
+            margin: 8px 0 10px;
+            padding-bottom: 6px;
+            border-bottom: 1px solid #e6e8ed;
+        }
+
+        .result-group-title {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px 10px;
+            margin: 0;
+            font-size: 17px;
+        }
+
+        .result-sort {
+            padding: 9px 14px;
+            border: 1px solid #ccd1d9;
+            border-radius: 8px;
+            background: #fff;
+            font-size: 15px;
+            min-width: 168px;
+            line-height: 1.3;
+        }
+
+        .promo-badge {
+            display: inline-block;
+            margin-left: 8px;
+            padding: 2px 7px;
+            border-radius: 999px;
+            background: #fff7ed;
+            border: 1px solid #fdba74;
+            color: #c2410c;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .result-main {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .result-name {
+            min-width: 0;
+            flex: 1;
+        }
+
+        .result-price {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+            white-space: nowrap;
+            margin-left: 12px;
+            font-weight: 700;
+        }
+
+        .menu-add-controls {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .menu-minus-btn {
+            width: 28px;
+            height: 28px;
+            border-radius: 999px;
+            border: 1px solid #dc2626;
+            background: #fef2f2;
+            color: #dc2626;
+            font-size: 20px;
+            font-weight: 800;
+            line-height: 1;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            cursor: pointer;
+        }
+
+        .menu-minus-btn:hover {
+            background: #dc2626;
+            color: #ffffff;
+        }
+
+        .menu-add-controls.has-qty .menu-minus-btn {
+            display: inline-flex;
+        }
+
+        .menu-add-btn {
+            width: 28px;
+            height: 28px;
+            border-radius: 999px;
+            border: 1px solid #2563eb;
+            background: #eff6ff;
+            color: #1d4ed8;
+            font-size: 20px;
+            font-weight: 800;
+            line-height: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            cursor: pointer;
+        }
+
+        .menu-add-btn:hover {
+            background: #2563eb;
+            color: #ffffff;
+        }
+
+        .menu-add-qty {
+            display: none;
+            min-width: 22px;
+            text-align: center;
+            font-weight: 800;
+            font-size: 14px;
+            color: #16a34a;
+            line-height: 28px;
+        }
+
+        .menu-add-controls.has-qty .menu-add-qty {
+            display: inline-block;
+        }
+
+        .back-to-top {
+            position: fixed;
+            right: 24px;
+            bottom: 80px;
+            z-index: 20;
+            width: 44px;
+            height: 44px;
+            border-radius: 999px;
+            background: #1f6feb;
+            color: #fff;
+            font-size: 22px;
+            font-weight: 700;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
+        }
+
+        .back-to-top:hover {
+            background: #1659bd;
+        }
+
+        .result-mode-bar {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px 14px;
+            margin-bottom: 14px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #e6e8ed;
+        }
+
+        .result-mode-bar-left {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px 14px;
+        }
+
+        .result-mode-bar-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: auto;
+        }
+
+        .result-mode-bar-right label {
+            font-size: 15px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .float-side-actions {
+            position: fixed;
+            right: 24px;
+            bottom: 136px;
+            z-index: 20;
+            display: flex;
+            flex-direction: column-reverse;
+            align-items: flex-end;
+            gap: 8px;
+        }
+
+        .float-side-actions>[hidden] {
+            display: none !important;
+        }
+
+        .float-bargain-btn,
+        .float-clear-btn {
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.22);
+        }
+
+        #results-section {
+            scroll-margin-top: 16px;
+        }
+
+        .bargain-btn {
+            background: #ea580c;
+            color: #fff;
+            border: 0;
+            border-radius: 8px;
+            padding: 9px 16px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .bargain-btn:hover {
+            background: #c2410c;
+        }
+
+        .bargain-mode-label {
+            color: #c2410c;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .menu-basket-btn {
+            position: fixed;
+            right: 24px;
+            bottom: 24px;
+            z-index: 21;
+            min-width: 88px;
+            height: 44px;
+            padding: 0 14px;
+            border: 0;
+            border-radius: 999px;
+            background: #16a34a;
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 6px 18px rgba(22, 163, 74, 0.28);
+            white-space: nowrap;
+        }
+
+        .menu-basket-btn:hover {
+            background: #15803d;
+        }
+
+        #menu-basket-display {
+            display: inline-block;
+        }
+
+        .menu-drawer-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 29;
+            background: rgba(15, 23, 42, 0.35);
+        }
+
+        .menu-drawer {
+            position: fixed;
+            top: 0;
+            right: 0;
+            z-index: 30;
+            width: min(520px, 92vw);
+            height: 100vh;
+            background: #ffffff;
+            box-shadow: -12px 0 28px rgba(15, 23, 42, 0.22);
+            transform: translateX(105%);
+            transition: transform 0.2s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .menu-drawer.open {
+            transform: translateX(0);
+        }
+
+        .menu-drawer-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 18px 20px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .menu-drawer-header h2 {
+            margin: 0 0 4px;
+            font-size: 22px;
+        }
+
+        .menu-drawer-close {
+            width: 34px;
+            height: 34px;
+            border: 0;
+            border-radius: 999px;
+            background: #f1f5f9;
+            color: #334155;
+            font-size: 24px;
+            line-height: 1;
+            cursor: pointer;
+        }
+
+        .menu-drawer-close:hover {
+            background: #e2e8f0;
+        }
+
+        .menu-drawer-empty {
+            padding: 18px 20px;
+            color: #64748b;
+        }
+
+        .menu-drawer-list {
+            flex: 1;
+            overflow: auto;
+            padding: 12px 16px;
+        }
+
+        .menu-part-card {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 8px 10px;
+            padding: 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            background: #f8fafc;
+            margin-bottom: 10px;
+        }
+
+        .menu-part-category {
+            font-size: 12px;
+            color: #64748b;
+            margin-bottom: 3px;
+        }
+
+        .menu-part-name {
+            font-weight: 700;
+            line-height: 1.35;
+        }
+
+        .menu-part-price {
+            font-weight: 800;
+            white-space: nowrap;
+            color: #0f172a;
+        }
+
+        .menu-part-qty {
+            grid-column: 1 / -1;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 8px;
+        }
+
+        .menu-qty-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+            background: #ffffff;
+            color: #334155;
+            font-size: 18px;
+            font-weight: 700;
+            line-height: 1;
+            cursor: pointer;
+            padding: 0;
+        }
+
+        .menu-qty-btn:hover {
+            background: #f1f5f9;
+            border-color: #94a3b8;
+        }
+
+        .menu-qty-value {
+            min-width: 28px;
+            text-align: center;
+            font-weight: 800;
+            font-size: 15px;
+        }
+
+        .menu-part-subtotal {
+            font-size: 12px;
+            color: #64748b;
+            margin-top: 4px;
+        }
+
+        .menu-drawer-footer {
+            border-top: 1px solid #e5e7eb;
+            padding: 16px 20px 18px;
+            background: #ffffff;
+        }
+
+        .menu-total-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 12px;
+            margin-bottom: 12px;
+            font-size: 18px;
+        }
+
+        .menu-total-row strong {
+            font-size: 24px;
+            color: #1d4ed8;
+        }
+
+        .menu-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .menu-table-output {
+            width: 100%;
+            min-height: 160px;
+            margin-top: 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 10px;
+            font-family: Consolas, monospace;
+            font-size: 13px;
+        }
+
+        .notebook-top-btn {
+            flex-shrink: 0;
+            padding: 7px 14px;
+            border: 0;
+            border-radius: 8px;
+            background: #4f46e5;
+            color: #ffffff;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .notebook-top-btn:hover {
+            background: #4338ca;
+        }
+
+        .notebook-top-btn.active {
+            background: #312e81;
+        }
+
+        .notebook-drawer {
+            position: fixed;
+            top: 0;
+            right: 0;
+            z-index: 28;
+            width: 50vw;
+            max-width: 50vw;
+            height: 100vh;
+            background: #ffffff;
+            border-left: 1px solid #e2e8f0;
+            box-shadow: -12px 0 28px rgba(15, 23, 42, 0.18);
+            transform: translateX(105%);
+            transition: transform 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            pointer-events: auto;
+        }
+
+        .notebook-drawer.open {
+            transform: translateX(0);
+        }
+
+        @media (max-width: 720px) {
+            .notebook-drawer {
+                width: 92vw;
+                max-width: 92vw;
+            }
+        }
+
+        .notebook-drawer-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 18px 20px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .notebook-drawer-header h2 {
+            margin: 0 0 4px;
+            font-size: 22px;
+        }
+
+        .notebook-drawer-body {
+            flex: 1;
+            overflow: auto;
+            padding: 12px 16px 16px;
+        }
+
+        .notebook-table-wrap {
+            overflow-x: auto;
+        }
+
+        .notebook-table {
+            width: 100%;
+            table-layout: fixed;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        .notebook-table th,
+        .notebook-table td {
+            border: 1px solid #e2e8f0;
+            padding: 8px;
+            vertical-align: top;
+            overflow: hidden;
+        }
+
+        .notebook-table thead th {
+            background: #f8fafc;
+            font-weight: 700;
+        }
+
+        .notebook-table .notebook-th-note,
+        .notebook-table .notebook-td-note {
+            width: 32%;
+        }
+
+        .notebook-table .notebook-th-actions,
+        .notebook-table .notebook-td-actions {
+            width: 48px;
+            text-align: center;
+            padding-left: 4px;
+            padding-right: 4px;
+        }
+
+        .notebook-table .notebook-col-select {
+            display: block;
+            width: 100%;
+            min-width: 0;
+            padding: 7px 8px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            background: #fff;
+            font-size: 13px;
+            box-sizing: border-box;
+        }
+
+        .notebook-table .notebook-cell-input {
+            display: block;
+            width: 100%;
+            min-width: 0;
+            padding: 7px 8px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 13px;
+            box-sizing: border-box;
+        }
+
+        .notebook-col-unit {
+            display: block;
+            margin-top: 4px;
+            font-size: 11px;
+            font-weight: 500;
+            color: #64748b;
+        }
+
+        .notebook-row-actions {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+        }
+
+        .notebook-icon-btn {
+            width: 30px;
+            height: 30px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            background: #fff;
+            color: #475569;
+            font-size: 16px;
+            line-height: 1;
+            cursor: pointer;
+            padding: 0;
+        }
+
+        .notebook-icon-btn:hover {
+            background: #f1f5f9;
+        }
+
+        .notebook-icon-btn.danger:hover {
+            background: #fee2e2;
+            border-color: #fecaca;
+            color: #b91c1c;
+        }
+
+        .notebook-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .notebook-drawer-footer {
+            border-top: 1px solid #e5e7eb;
+            padding: 14px 20px;
+            background: #fff;
+        }
+
+        .filter-toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+            max-width: min(92vw, 480px);
+            line-height: 1.4;
+        }
+
+        .filter-toast[hidden] {
+            display: none !important;
+        }
+
+        .filter-toast.loading {
+            background: #1f6feb;
+            color: #fff;
+        }
+
+        .filter-toast.loading-red {
+            background: #dc2626;
+            color: #fff;
+        }
+
+        .filter-toast.success {
+            background: #166534;
+            color: #fff;
+        }
+
+        .filter-toast.error {
+            background: #b91c1c;
+            color: #fff;
+        }
+
+        .filter-toast-spinner {
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255, 255, 255, 0.35);
+            border-top-color: #fff;
+            border-radius: 999px;
+            animation: filter-toast-spin 0.7s linear infinite;
+            flex-shrink: 0;
+        }
+
+        @keyframes filter-toast-spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .filter-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 99;
+            background: rgba(247, 248, 250, 0.78);
+            backdrop-filter: blur(3px);
+            -webkit-backdrop-filter: blur(3px);
+            cursor: wait;
+        }
+
+        .filter-overlay[hidden] {
+            display: none !important;
+        }
+
+        body.filter-busy {
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body>
+    {% macro render_result_item(item, show_category, order) %}
+    {% set nb_json = item | notebook_specs | tojson %}
+    <li data-price="{{ item['price'] }}" data-order="{{ order }}">
+        <div class="result-main">
+            <span class="result-name">
+                {% if show_category %}[{{ item["category"] }}] {% endif %}
+                {{ item["name"] }}
+            </span>
+            <span class="result-price">
+                ${{ "{:,}".format(item["price"]) }}
+                <span class="menu-add-controls">
+                    <button type="button" class="menu-minus-btn" data-name="{{ item['name'] | e }}"
+                        data-category="{{ item['category'] | e }}" data-price="{{ item['price'] }}"
+                        data-raw="{{ item.get('raw', item['name']) | e }}" data-notebook='{{ nb_json }}'
+                        aria-label="減少數量" title="減少 1 件">−</button>
+                    <span class="menu-add-qty" aria-hidden="true"></span>
+                    <button type="button" class="menu-add-btn" data-name="{{ item['name'] | e }}"
+                        data-category="{{ item['category'] | e }}" data-price="{{ item['price'] }}"
+                        data-raw="{{ item.get('raw', item['name']) | e }}" data-notebook='{{ nb_json }}'
+                        title="加入菜單">+</button>
+                </span>
+            </span>
+        </div>
+        {% if item.get("promo_deadline") %}
+        <span class="promo-badge">特價到 {{ item["promo_deadline"] }}</span>
+        {% elif item.get("raw") and ("特價" in item.get("raw") or "下殺" in item.get("raw") or "↘" in item.get("raw")) %}
+        <span class="promo-badge">特價</span>
+        {% endif %}
+    </li>
+    {% endmacro %}
+    <div id="filter-overlay" class="filter-overlay" hidden aria-hidden="true"></div>
+    <div id="filter-toast" class="filter-toast" hidden role="status" aria-live="polite"></div>
+
+    <div class="card">
+        <form method="get" class="category-form">
+            <input type="hidden" name="bargain" id="category-bargain-field" value="1" {% if not bargain_mode
+                %}disabled{% endif %}>
+            <div class="row category-row">
+                <label for="category">類別</label>
+                <select id="category" name="category" class="stripe">
+                    <option value="__ALL__" {% if selected_category=="__ALL__" %}selected{% endif %}>全部類別</option>
+                    {% for c in categories %}
+                    <option value="{{ c }}" data-platform-mode="{{ category_platform_modes.get(c, '') }}" {% if
+                        selected_category==c %}selected{% endif %}>{{ c }}</option>
+                    {% endfor %}
+                </select>
+                <a href="{{ url_for('index') }}" class="btn btn-clear" id="reset-link">重置</a>
+            </div>
+
+            <div id="platform-section" class="row platform-filter" hidden></div>
+        </form>
+
+        <form method="get" id="conditions-form">
+            <input type="hidden" name="category" value="{{ selected_category }}">
+            {% if selected_platform %}
+            <input type="hidden" name="platform" value="{{ selected_platform }}">
+            {% endif %}
+            <input type="hidden" name="bargain" id="conditions-bargain-field" value="1" {% if not bargain_mode
+                %}disabled{% endif %}>
+
+            <div class="conditions-panel">
+                <div class="conditions-header">
+                    <div class="conditions-title">條件</div>
+                    <button type="button" id="open-notebook-btn" class="notebook-top-btn" title="開啟參數筆記本">參數筆記本</button>
+                </div>
+
+                {% if category_groups %}
+                <div class="filter-group">
+                    <details {% if selected_groups or selected_platform %}open{% endif %}>
+                        <summary>
+                            內建分類
+                            <span class="hint">
+                                （{{ category_groups|length }} 項
+                                {% if selected_groups %}，已選 {{ selected_groups|length }} 項{% endif %}
+                                ）
+                            </span>
+                        </summary>
+                        <div class="group-list-toolbar">
+                            <button type="button" class="btn btn-secondary" id="group-select-all">全選</button>
+                            <button type="button" class="btn btn-secondary" id="group-select-none">取消全選</button>
+                        </div>
+                        <div class="group-list" id="group-list">
+                            {% for group in category_groups %}
+                            <label>
+                                <input type="checkbox" name="group" value="{{ group }}" {% if group in selected_groups
+                                    %}checked{% endif %}>
+                                {{ group }}
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </details>
+                </div>
+                {% endif %}
+
+                {% if category_filter_defs %}
+                {% for filter_title, filter_options in category_filter_defs.items() %}
+                <div class="filter-group">
+                    <div><strong>{{ filter_title }}</strong></div>
+                    <div class="row">
+                        {% if filter_title == "支援腳位" %}
+                        <label>
+                            <input type="radio" name="cf_{{ filter_title }}" value="" {% if not
+                                selected_category_filters.get(filter_title) %}checked{% endif %}>
+                            略過
+                        </label>
+                        {% for opt in filter_options %}
+                        <label>
+                            <input type="radio" name="cf_{{ filter_title }}" value="{{ opt }}" {% if opt in
+                                selected_category_filters.get(filter_title, []) %}checked{% endif %}>
+                            {{ opt }}
+                        </label>
+                        {% endfor %}
+                        {% else %}
+                        {% for opt in filter_options %}
+                        <label>
+                            <input type="checkbox" name="cf_{{ filter_title }}" value="{{ opt }}" {% if opt in
+                                selected_category_filters.get(filter_title, []) %}checked{% endif %}>
+                            {{ opt }}
+                        </label>
+                        {% endfor %}
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+                {% endif %}
+
+                {% if numeric_filter_defs %}
+                {% for fdef in numeric_filter_defs %}
+                <div class="filter-group">
+                    <div><strong>{{ fdef.label }}</strong></div>
+                    <p class="filter-hint">
+                        {{ fdef.hint }}
+                        {% if fdef.unit_label %}單位：{{ fdef.unit_label }}{% endif %}
+                    </p>
+                    <div class="row">
+                        {% if fdef.type in ["max_number", "min_number"] %}
+                        <input id="spec_{{ fdef.field }}" class="spec-input" name="spec_{{ fdef.field }}" type="text"
+                            placeholder="{{ fdef.placeholder }}"
+                            value="{{ selected_numeric_specs.get(fdef.field, '') }}">
+                        <span class="muted">{{ fdef.unit_label }}</span>
+                        {% elif fdef.type == "select" %}
+                        <select id="spec_{{ fdef.field }}" name="spec_{{ fdef.field }}">
+                            {% for value, label in fdef.options %}
+                            <option value="{{ value }}" {% if selected_numeric_specs.get(fdef.field, '' )==value
+                                %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+                {% endif %}
+
+                {% if not show_category %}
+                <div class="row">
+                    <label for="brand">品牌</label>
+                    <select id="brand" name="brand" class="stripe">
+                        <option value="">略過</option>
+                        {% for b in brands %}
+                        <option value="{{ b }}" {% if selected_brand==b %}selected{% endif %}>{{ b }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endif %}
+
+                <div class="row">
+                    <label for="min_price">最低價</label>
+                    <input id="min_price" name="min_price" type="text" placeholder="例如 3000"
+                        value="{{ min_price_raw }}">
+                    <label for="max_price">最高價</label>
+                    <input id="max_price" name="max_price" type="text" placeholder="例如 8000"
+                        value="{{ max_price_raw }}">
+                </div>
+
+                <div class="row">
+                    <label for="keyword">關鍵字</label>
+                    <input id="keyword" name="keyword" type="text" placeholder="可空白" value="{{ keyword }}">
+                </div>
+                <p class="filter-hint keyword-warning">
+                    <strong>提醒：</strong>關鍵字搜尋只會依照原價屋商品名稱文字比對。若商品名稱沒有標清楚規格、顏色、版本或活動資訊，可能會漏掉或誤篩。
+                </p>
+
+                {% if show_cooler_keyword_shortcuts %}
+                <div class="keyword-shortcuts">
+                    <span class="muted">快捷：</span>
+                    {% for kw in cooler_keyword_shortcuts %}
+                    <button type="button" class="btn btn-secondary keyword-chip" data-keyword="{{ kw }}">
+                        {{ kw }}
+                    </button>
+                    {% endfor %}
+                </div>
+                <p class="filter-hint keyword-shortcut-note">
+                    <strong>快捷關鍵字也會受到上方限制影響。</strong>
+                </p>
+                {% endif %}
+
+                <div class="filter-summary" id="filter-summary">
+                    <div class="filter-summary-title">條件摘要</div>
+                    <div class="filter-summary-body" id="filter-summary-body"></div>
+                </div>
+
+                <div class="conditions-actions">
+                    <div class="conditions-actions-left">
+                        <button type="submit">套用篩選</button>
+                        {% if not show_category %}
+                        <label class="white-filter-btn">
+                            <input type="checkbox" id="want_white" name="want_white" value="1" {% if want_white
+                                %}checked{% endif %}>
+                            就是要白色
+                        </label>
+                        {% endif %}
+                    </div>
+                    <a href="{{ url_for('index', category=selected_category) }}" class="btn btn-clear"
+                        id="clear-link">清除</a>
+                </div>
+            </div>
+        </form>
+
+        <template id="platform-template">
+            <span>平台</span>
+            <label class="platform-opt platform-all">
+                <input type="radio" name="platform" value="" checked>
+                全部
+            </label>
+            <label class="platform-opt platform-intel">
+                <input type="radio" name="platform" value="intel">
+                Intel
+            </label>
+            <label class="platform-opt platform-nvidia platform-gpu-only">
+                <input type="radio" name="platform" value="nvidia">
+                NVIDIA
+            </label>
+            <label class="platform-opt platform-amd">
+                <input type="radio" name="platform" value="amd">
+                AMD
+            </label>
+        </template>
+
+        <script>
+            (function () {
+                const modes = {{ category_platform_modes | tojson
+            }};
+            const savedPlatform = {{ selected_platform | tojson }};
+            const select = document.getElementById("category");
+            const section = document.getElementById("platform-section");
+            const template = document.getElementById("platform-template");
+            const form = select ? select.closest("form") : null;
+            if (!select || !section || !template || !form) return;
+
+            function currentMode() {
+                return modes[select.value]
+                    || select.selectedOptions[0]?.dataset.platformMode
+                    || "";
+            }
+
+            function attachPlatformSubmit() {
+                section.querySelectorAll('input[name="platform"]').forEach((input) => {
+                    input.addEventListener("change", function () {
+                        form.requestSubmit();
+                    });
+                });
+            }
+
+            function appendTemplateContent() {
+                const frag = template.content.cloneNode(true);
+                while (frag.firstChild) {
+                    section.appendChild(frag.firstChild);
+                }
+            }
+
+            function renderPlatform(mode, selectedPlatform) {
+                section.replaceChildren();
+                if (!mode) {
+                    section.hidden = true;
+                    return;
+                }
+
+                section.hidden = false;
+                appendTemplateContent();
+
+                const nvidiaOpt = section.querySelector(".platform-gpu-only");
+                if (nvidiaOpt) {
+                    nvidiaOpt.hidden = mode !== "gpu";
+                }
+
+                const want = selectedPlatform || "";
+                section.querySelectorAll('input[name="platform"]').forEach((input) => {
+                    input.checked = input.value === want;
+                });
+                attachPlatformSubmit();
+            }
+
+            select.addEventListener("change", function () {
+                renderPlatform(currentMode(), "");
+                form.requestSubmit();
+            });
+
+            renderPlatform(currentMode(), savedPlatform);
+            }) ();
+        </script>
+
+        <script>
+            (function () {
+                const groupList = document.getElementById("group-list");
+                const selectAllBtn = document.getElementById("group-select-all");
+                const selectNoneBtn = document.getElementById("group-select-none");
+
+                function setAllGroups(checked) {
+                    if (!groupList) return;
+                    groupList.querySelectorAll('input[name="group"]').forEach((input) => {
+                        input.checked = checked;
+                    });
+                }
+
+                if (selectAllBtn) {
+                    selectAllBtn.addEventListener("click", function () {
+                        setAllGroups(true);
+                    });
+                }
+
+                if (selectNoneBtn) {
+                    selectNoneBtn.addEventListener("click", function () {
+                        setAllGroups(false);
+                    });
+                }
+            })();
+        </script>
+
+        <script>
+            (function () {
+                const keywordInput = document.getElementById("keyword");
+                const wantWhite = document.getElementById("want_white");
+                const conditionsForm = keywordInput ? keywordInput.closest("form") : null;
+
+                if (keywordInput) {
+                    document.querySelectorAll(".keyword-chip").forEach((button) => {
+                        button.addEventListener("click", function () {
+                            keywordInput.value = button.dataset.keyword || "";
+                            keywordInput.focus();
+                        });
+                    });
+                }
+
+                if (wantWhite && conditionsForm) {
+                    wantWhite.addEventListener("change", function () {
+                        conditionsForm.requestSubmit();
+                    });
+                }
+            })();
+        </script>
+
+        <script>
+            (function () {
+                const summaryBody = document.getElementById("filter-summary-body");
+                const conditionsForm = document.querySelector(".conditions-panel")?.closest("form");
+                if (!summaryBody || !conditionsForm) return;
+
+                const categoryLabels = {{ category_labels | tojson
+            }};
+            const numericFilterDefs = {{ numeric_filter_defs | tojson }};
+            const platformLabels = { intel: "Intel", nvidia: "NVIDIA", amd: "AMD" };
+            const suffixPatterns = [
+                /\s*【[^】]*】\s*$/,
+                /\s*\([^)]*\)\s*$/,
+                /\s*（[^）]*）\s*$/,
+            ];
+
+            function shortenLabel(name) {
+                if (!name) return name;
+                let s = name.trim();
+                let changed = true;
+                while (changed) {
+                    changed = false;
+                    for (const re of suffixPatterns) {
+                        const next = s.replace(re, "");
+                        if (next !== s) {
+                            s = next.trim();
+                            changed = true;
+                        }
+                    }
+                }
+                return s || name;
+            }
+
+            function addRow(label, items) {
+                if (!items || !items.length) return;
+                const row = document.createElement("div");
+                row.className = "filter-summary-row";
+                const labelEl = document.createElement("span");
+                labelEl.className = "label";
+                labelEl.textContent = label + "：";
+                const chips = document.createElement("span");
+                chips.className = "filter-summary-chips";
+                items.forEach((item) => {
+                    const display = typeof item === "string" ? item : item.display;
+                    const full = typeof item === "string" ? "" : (item.full || "");
+                    const chip = document.createElement("span");
+                    chip.className = "filter-summary-chip";
+                    chip.textContent = display;
+                    if (full && full !== display) {
+                        chip.title = full;
+                    }
+                    chips.appendChild(chip);
+                });
+                row.appendChild(labelEl);
+                row.appendChild(chips);
+                summaryBody.appendChild(row);
+            }
+
+            function readCategoryFilterRows() {
+                const rows = [];
+                conditionsForm.querySelectorAll(".filter-group").forEach((group) => {
+                    const titleEl = group.querySelector("details > summary, div > strong");
+                    if (!titleEl) return;
+                    const title = titleEl.textContent.replace(/\s*（[^）]*）\s*$/, "").trim();
+                    if (title === "內建分類") return;
+
+                    const checked = [];
+                    group.querySelectorAll('input[type="checkbox"]:checked, input[type="radio"]:checked').forEach((input) => {
+                        if (!input.value) return;
+                        const label = input.closest("label");
+                        const text = label
+                            ? label.textContent.replace(input.value, "").trim()
+                            : input.value;
+                        if (text && text !== "略過") {
+                            checked.push(text);
+                        }
+                    });
+                    if (checked.length) {
+                        rows.push([title, checked]);
+                    }
+                });
+                return rows;
+            }
+
+            function readNumericRows() {
+                const rows = [];
+                numericFilterDefs.forEach((fdef) => {
+                    const input = conditionsForm.querySelector('[name="spec_' + fdef.field + '"]');
+                    if (!input) return;
+                    const raw = (input.value || "").trim();
+                    if (!raw) return;
+
+                    let display = raw;
+                    if (fdef.type === "select") {
+                        const opt = input.querySelector('option[value="' + CSS.escape(raw) + '"]');
+                        display = opt ? opt.textContent.trim() : raw;
+                    } else if (fdef.type === "min_number") {
+                        display = "≥ " + raw + (fdef.unit_label ? " " + fdef.unit_label : "");
+                    } else if (fdef.type === "max_number") {
+                        display = "≤ " + raw + (fdef.unit_label ? " " + fdef.unit_label : "");
+                    }
+                    rows.push([fdef.label, [display]]);
+                });
+                return rows;
+            }
+
+            function readPriceRow() {
+                const minEl = conditionsForm.querySelector('[name="min_price"]');
+                const maxEl = conditionsForm.querySelector('[name="max_price"]');
+                const minV = minEl ? minEl.value.trim() : "";
+                const maxV = maxEl ? maxEl.value.trim() : "";
+                if (!minV && !maxV) return null;
+                if (minV && maxV) return ["價格", [minV + " ~ " + maxV]];
+                if (minV) return ["價格", ["≥ " + minV]];
+                return ["價格", ["≤ " + maxV]];
+            }
+
+            function updateFilterSummary() {
+                summaryBody.replaceChildren();
+                const rows = [];
+
+                const catVal = conditionsForm.querySelector('[name="category"]')?.value || "__ALL__";
+                rows.push(["類別", [categoryLabels[catVal] || catVal]]);
+
+                const platformVal = conditionsForm.querySelector('[name="platform"]')?.value || "";
+                if (platformVal && platformLabels[platformVal]) {
+                    rows.push(["平台", [platformLabels[platformVal]]]);
+                }
+
+                const groups = [];
+                conditionsForm.querySelectorAll('input[name="group"]:checked').forEach((input) => {
+                    const full = input.value;
+                    groups.push({
+                        display: shortenLabel(full),
+                        full: full,
+                    });
+                });
+                if (groups.length) {
+                    rows.push(["內建分類", groups]);
+                }
+
+                readCategoryFilterRows().forEach(([title, values]) => {
+                    rows.push([title, values]);
+                });
+
+                readNumericRows().forEach(([title, values]) => {
+                    rows.push([title, values]);
+                });
+
+                const brandSelect = conditionsForm.querySelector('[name="brand"]');
+                if (brandSelect) {
+                    const brand = brandSelect.value.trim();
+                    if (brand) {
+                        rows.push(["品牌", [brand]]);
+                    }
+                }
+
+                const priceRow = readPriceRow();
+                if (priceRow) {
+                    rows.push(priceRow);
+                }
+
+                const bargainField = document.getElementById("conditions-bargain-field");
+                if (bargainField && !bargainField.disabled) {
+                    rows.push(["模式", ["我要撿便宜"]]);
+                }
+
+                const keyword = conditionsForm.querySelector('[name="keyword"]')?.value.trim() || "";
+                if (keyword) {
+                    rows.push(["關鍵字", [keyword]]);
+                }
+
+                if (conditionsForm.querySelector('[name="want_white"]:checked')) {
+                    rows.push(["顏色", ["白色"]]);
+                }
+
+                const hasFilter = rows.length > 1
+                    || (rows.length === 1 && rows[0][0] !== "類別")
+                    || (rows.length === 1 && rows[0][0] === "類別" && catVal !== "__ALL__");
+
+                if (!hasFilter) {
+                    const empty = document.createElement("p");
+                    empty.className = "filter-summary-empty";
+                    empty.textContent = "尚未設定額外條件（僅類別為全部類別）。";
+                    summaryBody.appendChild(empty);
+                    return;
+                }
+
+                rows.forEach(([label, values]) => {
+                    addRow(label, values);
+                });
+            }
+
+            updateFilterSummary();
+            conditionsForm.addEventListener("input", updateFilterSummary);
+            conditionsForm.addEventListener("change", updateFilterSummary);
+            }) ();
+        </script>
+
+        {% if error %}
+        <p class="error">{{ error }}</p>
+        {% endif %}
+    </div>
+
+    <div class="card summary">
+        <p><strong>類別：</strong>{{ category_display }}</p>
+        {% for filter_title, values in selected_category_filters.items() %}
+        <p><strong>{{ filter_title }}：</strong>{{ values | join(", ") }}</p>
+        {% endfor %}
+        {% if selected_platform == "intel" %}
+        <p><strong>平台：</strong>Intel</p>
+        {% elif selected_platform == "nvidia" %}
+        <p><strong>平台：</strong>NVIDIA</p>
+        {% elif selected_platform == "amd" %}
+        <p><strong>平台：</strong>AMD</p>
+        {% endif %}
+        {% if selected_groups %}
+        <p><strong>內建分類：</strong>{{ selected_groups | map('shorten_label') | join(", ") }}</p>
+        {% endif %}
+        {% for fdef in numeric_filter_defs %}
+        {% if fdef.field in selected_numeric_specs %}
+        <p>
+            <strong>{{ fdef.label }}：</strong>
+            {% if fdef.type == "select" %}
+            {% for value, label in fdef.options %}
+            {% if value == selected_numeric_specs[fdef.field] %}{{ label }}{% endif %}
+            {% endfor %}
+            {% elif fdef.type == "min_number" %}
+            ≥ {{ selected_numeric_specs[fdef.field] }} {{ fdef.unit_label }}
+            {% else %}
+            ≤ {{ selected_numeric_specs[fdef.field] }} {{ fdef.unit_label }}
+            {% endif %}
+        </p>
+        {% endif %}
+        {% endfor %}
+        {% if not show_category %}
+        <p><strong>品牌：</strong>{{ selected_brand or "略過" }}</p>
+        {% endif %}
+        <p><strong>關鍵字：</strong>{{ keyword or "無" }}</p>
+        {% if want_white %}
+        <p><strong>顏色：</strong>白色（white / 白）</p>
+        {% endif %}
+        {% if bargain_mode %}
+        <p><strong>模式：</strong>我要撿便宜（僅特價 / 優惠商品）</p>
+        {% endif %}
+        <p><strong>結果：</strong>{{ results|length }} 筆</p>
+    </div>
+
+    <div class="card" id="results-section">
+        <div class="result-mode-bar">
+            <div class="result-mode-bar-left">
+                <div id="bargain-normal-controls" {% if bargain_mode %}hidden{% endif %}>
+                    <button type="button" class="bargain-btn" id="enter-bargain-btn">我要撿便宜</button>
+                    <span class="muted">僅顯示特價 / 優惠商品，並依期限分區</span>
+                </div>
+                <div id="bargain-active-controls" {% if not bargain_mode %}hidden{% endif %}>
+                    <button type="button" class="btn btn-secondary" id="exit-bargain-btn">返回一般列表</button>
+                    <span class="bargain-mode-label">撿便宜模式 · 依特價期限分區</span>
+                </div>
+            </div>
+            {% if results %}
+            <div class="result-mode-bar-right">
+                <label for="result-sort">價格排序</label>
+                <select id="result-sort" class="result-sort" aria-label="價格排序">
+                    <option value="">預設順序</option>
+                    <option value="asc">價格由低到高</option>
+                    <option value="desc">價格由高到低</option>
+                </select>
+            </div>
+            {% endif %}
+        </div>
+
+        {% if results %}
+        <div id="results-flat" {% if bargain_mode %}hidden{% endif %}>
+            <ul class="result-list">
+                {% for item in results %}
+                {{ render_result_item(item, show_category, loop.index0) }}
+                {% endfor %}
+            </ul>
+        </div>
+        <div id="results-bargain" {% if not bargain_mode %}hidden{% endif %}>
+            {% if result_groups %}
+            {% for group in result_groups %}
+            <div class="result-group">
+                <div class="result-group-header">
+                    <h3 class="result-group-title">
+                        {{ group.title }}
+                        <span class="muted">（{{ group["items"]|length }} 筆）</span>
+                    </h3>
+                </div>
+
+                <ul class="result-list">
+                    {% for item in group["items"] %}
+                    {{ render_result_item(item, show_category, loop.index0) }}
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endfor %}
+            {% else %}
+            <p class="muted">目前沒有符合條件的特價商品。</p>
+            {% endif %}
+        </div>
+        {% else %}
+        <p class="muted">目前沒有符合條件的商品。</p>
+        {% endif %}
+    </div>
+
+    {% if results %}
+    <div class="float-side-actions" id="float-side-actions" hidden>
+        <button type="button" id="float-bargain-btn" class="bargain-btn float-bargain-btn" {% if bargain_mode %}hidden{% endif %}>
+            我要撿便宜
+        </button>
+        <a href="{{ url_for('index', category=selected_category) }}" class="btn btn-clear float-clear-btn"
+            id="float-clear-btn" hidden>清除</a>
+    </div>
+    {% endif %}
+
+    <button type="button" id="back-to-top" class="back-to-top" title="回到最上方" hidden>
+        ↑
+    </button>
+
+    <button type="button" id="menu-basket-btn" class="menu-basket-btn" title="開啟電腦菜單">
+        <span id="menu-basket-display">菜單</span>
+    </button>
+
+    <div id="menu-drawer-overlay" class="menu-drawer-overlay" hidden></div>
+
+    <aside id="menu-drawer" class="menu-drawer" aria-hidden="true">
+        <div class="menu-drawer-header">
+            <div>
+                <h2>電腦菜單</h2>
+                <p class="muted">已選零組件會暫存在這台瀏覽器</p>
+            </div>
+            <button type="button" id="menu-drawer-close" class="menu-drawer-close" aria-label="關閉">×</button>
+        </div>
+
+        <div id="menu-drawer-empty" class="menu-drawer-empty">
+            尚未加入任何零組件。
+        </div>
+
+        <div id="menu-drawer-list" class="menu-drawer-list"></div>
+
+        <div class="menu-drawer-footer">
+            <div class="menu-total-row">
+                <span>總金額</span>
+                <strong id="menu-total-price">$0</strong>
+            </div>
+
+            <div class="menu-actions">
+                <button type="button" id="menu-generate-table" class="btn btn-primary">生成表格</button>
+                <button type="button" id="menu-clear-all" class="btn btn-secondary">清空菜單</button>
+            </div>
+
+            <textarea id="menu-table-output" class="menu-table-output" readonly hidden></textarea>
+        </div>
+    </aside>
+
+    <aside id="notebook-drawer" class="notebook-drawer" aria-hidden="true">
+        <div class="notebook-drawer-header">
+            <div>
+                <h2>參數筆記本</h2>
+                <p class="muted">左側可繼續操作篩選；加入菜單時自動記錄規格，亦可手動編輯。</p>
+            </div>
+            <button type="button" id="notebook-drawer-close" class="menu-drawer-close" aria-label="關閉">×</button>
+        </div>
+
+        <div class="notebook-drawer-body">
+            <div class="notebook-toolbar">
+                <button type="button" id="notebook-add-row" class="btn btn-primary">新增一列</button>
+                <button type="button" id="notebook-add-col" class="btn btn-secondary">新增欄位</button>
+            </div>
+            <div class="notebook-table-wrap">
+                <table class="notebook-table" id="notebook-table">
+                    <thead id="notebook-table-head"></thead>
+                    <tbody id="notebook-table-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="notebook-drawer-footer">
+            <p class="muted" style="margin:0;font-size:13px;">
+                頂列下拉選單可選擇要記錄的規格類型（顯卡長度、機殼支援高度等），與篩選條件相同。
+            </p>
+        </div>
+    </aside>
+
+    <script id="notebook-field-defs" type="application/json">{{ notebook_fields | tojson }}</script>
+
+    <script>
+        (function () {
+            const enterBtn = document.getElementById("enter-bargain-btn");
+            const exitBtn = document.getElementById("exit-bargain-btn");
+            const floatBargainBtn = document.getElementById("float-bargain-btn");
+            const floatClearBtn = document.getElementById("float-clear-btn");
+            const floatSideActions = document.getElementById("float-side-actions");
+            const clearLink = document.getElementById("clear-link");
+            const flatResults = document.getElementById("results-flat");
+            const bargainResults = document.getElementById("results-bargain");
+            const normalControls = document.getElementById("bargain-normal-controls");
+            const activeControls = document.getElementById("bargain-active-controls");
+            const bargainFields = [
+                document.getElementById("conditions-bargain-field"),
+                document.getElementById("category-bargain-field"),
+            ].filter(Boolean);
+
+            function isBargainActive() {
+                return bargainResults && !bargainResults.hidden;
+            }
+
+            function syncBargainFields(active) {
+                bargainFields.forEach((field) => {
+                    field.disabled = !active;
+                });
+            }
+
+            function updateFloatSideActionsVisibility() {
+                if (floatBargainBtn && enterBtn) {
+                    if (isBargainActive()) {
+                        floatBargainBtn.hidden = true;
+                    } else {
+                        const rect = enterBtn.getBoundingClientRect();
+                        floatBargainBtn.hidden = rect.bottom > 0;
+                    }
+                }
+
+                if (floatClearBtn && clearLink) {
+                    const rect = clearLink.getBoundingClientRect();
+                    floatClearBtn.hidden = rect.bottom > 0;
+                }
+
+                if (floatSideActions) {
+                    const hasVisible = floatSideActions.querySelector(":not([hidden])");
+                    floatSideActions.hidden = !hasVisible;
+                }
+            }
+
+            function setBargainMode(active, scroll) {
+                if (flatResults) flatResults.hidden = active;
+                if (bargainResults) bargainResults.hidden = !active;
+                if (normalControls) normalControls.hidden = active;
+                if (activeControls) activeControls.hidden = !active;
+                syncBargainFields(active);
+                updateFloatSideActionsVisibility();
+
+                const url = new URL(window.location.href);
+                if (active) {
+                    url.searchParams.set("bargain", "1");
+                } else {
+                    url.searchParams.delete("bargain");
+                }
+                url.hash = "";
+                history.replaceState(null, "", url);
+
+                if (scroll) {
+                    document.getElementById("results-section")?.scrollIntoView({ block: "start" });
+                }
+
+                const conditionsField = document.getElementById("conditions-bargain-field");
+                if (conditionsField) {
+                    conditionsField.dispatchEvent(new Event("change", { bubbles: true }));
+                }
+
+            }
+
+            if (enterBtn) {
+                enterBtn.addEventListener("click", function (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    setBargainMode(true, true);
+                });
+            }
+
+            if (exitBtn) {
+                exitBtn.addEventListener("click", function (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    setBargainMode(false, false);
+                });
+            }
+
+            if (floatBargainBtn) {
+                floatBargainBtn.addEventListener("click", function (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    setBargainMode(true, true);
+                });
+            }
+
+            window.addEventListener("scroll", updateFloatSideActionsVisibility, { passive: true });
+            window.addEventListener("resize", updateFloatSideActionsVisibility);
+            updateFloatSideActionsVisibility();
+        })();
+    </script>
+
+    <script>
+        (function () {
+            const sortSelect = document.getElementById("result-sort");
+            if (!sortSelect) return;
+
+            function sortResultList(list, mode) {
+                const items = Array.from(list.children);
+                if (!mode) {
+                    items.sort(
+                        (a, b) => Number(a.dataset.order) - Number(b.dataset.order)
+                    );
+                } else if (mode === "asc") {
+                    items.sort(
+                        (a, b) => Number(a.dataset.price) - Number(b.dataset.price)
+                    );
+                } else {
+                    items.sort(
+                        (a, b) => Number(b.dataset.price) - Number(a.dataset.price)
+                    );
+                }
+                items.forEach((li) => list.appendChild(li));
+            }
+
+            function sortAllResults(mode) {
+                document.querySelectorAll(".result-list").forEach((list) => {
+                    sortResultList(list, mode);
+                });
+            }
+
+            sortSelect.addEventListener("change", function () {
+                sortAllResults(sortSelect.value);
+            });
+        })();
+    </script>
+
+    <script>
+        (function () {
+            const TOAST_PENDING_KEY = "toastPending";
+            const toast = document.getElementById("filter-toast");
+            const overlay = document.getElementById("filter-overlay");
+            const pageResultCount = {{ results| length
+        }};
+        const pageError = {{ error| tojson }};
+        let hideTimer = null;
+
+        function setPageBusy(busy) {
+            if (overlay) {
+                overlay.hidden = !busy;
+                overlay.setAttribute("aria-hidden", busy ? "false" : "true");
+            }
+            document.body.classList.toggle("filter-busy", busy);
+        }
+
+        const doneMessages = {
+            filter: "篩選完畢，共 " + pageResultCount + " 筆結果",
+            clear: "清除完畢，共 " + pageResultCount + " 筆結果",
+            reset: "重置完畢，共 " + pageResultCount + " 筆結果",
+        };
+
+        const failMessages = {
+            filter: "篩選失敗：",
+            clear: "清除失敗：",
+            reset: "重置失敗：",
+        };
+
+        function showFilterToast(message, type, options) {
+            options = options || {};
+            if (!toast) return;
+
+            if (hideTimer) {
+                clearTimeout(hideTimer);
+                hideTimer = null;
+            }
+
+            toast.className = "filter-toast " + type;
+            toast.replaceChildren();
+
+            if (type === "loading" || type === "loading-red") {
+                const spinner = document.createElement("span");
+                spinner.className = "filter-toast-spinner";
+                spinner.setAttribute("aria-hidden", "true");
+                toast.appendChild(spinner);
+            }
+
+            const text = document.createElement("span");
+            text.textContent = message;
+            toast.appendChild(text);
+            toast.hidden = false;
+
+            if (options.duration) {
+                hideTimer = setTimeout(function () {
+                    toast.hidden = true;
+                }, options.duration);
+            }
+        }
+
+        function markActionPending(action, loadingMessage) {
+            sessionStorage.setItem(TOAST_PENDING_KEY, action);
+            setPageBusy(true);
+            const loadingType = (action === "clear" || action === "reset")
+                ? "loading-red"
+                : "loading";
+            showFilterToast(loadingMessage, loadingType);
+        }
+
+        document.querySelectorAll(".category-form, #conditions-form").forEach(function (form) {
+            form.addEventListener("submit", function () {
+                markActionPending("filter", "篩選中，請稍候…");
+            });
+        });
+
+        const clearLink = document.getElementById("clear-link");
+        if (clearLink) {
+            clearLink.addEventListener("click", function () {
+                markActionPending("clear", "清除中，請稍候…");
+            });
+        }
+
+        const floatClearLink = document.getElementById("float-clear-btn");
+        if (floatClearLink) {
+            floatClearLink.addEventListener("click", function () {
+                markActionPending("clear", "清除中，請稍候…");
+            });
+        }
+
+        const resetLink = document.getElementById("reset-link");
+        if (resetLink) {
+            resetLink.addEventListener("click", function () {
+                markActionPending("reset", "重置中，請稍候…");
+            });
+        }
+
+        setPageBusy(false);
+
+        const pendingAction = sessionStorage.getItem(TOAST_PENDING_KEY);
+        if (pendingAction) {
+            sessionStorage.removeItem(TOAST_PENDING_KEY);
+            if (pageError) {
+                const prefix = failMessages[pendingAction] || failMessages.filter;
+                showFilterToast(prefix + pageError, "error", { duration: 5000 });
+            } else {
+                const message = doneMessages[pendingAction] || doneMessages.filter;
+                showFilterToast(message, "success", { duration: 4000 });
+            }
+        }
+        }) ();
+    </script>
+
+    <script>
+        (function () {
+            const btn = document.getElementById("back-to-top");
+            if (!btn) return;
+
+            function updateVisible() {
+                btn.hidden = window.scrollY < 300;
+            }
+
+            btn.addEventListener("click", function () {
+                window.scrollTo({
+                    top: 0,
+                    behavior: "smooth",
+                });
+            });
+
+            window.addEventListener("scroll", updateVisible);
+            updateVisible();
+        })();
+    </script>
+
+    <script>
+        (function () {
+            const STORAGE_KEY = "coolpcPcBuildMenu";
+
+            const drawer = document.getElementById("menu-drawer");
+            const overlay = document.getElementById("menu-drawer-overlay");
+            const openBtn = document.getElementById("menu-basket-btn");
+            const closeBtn = document.getElementById("menu-drawer-close");
+            const basketDisplayEl = document.getElementById("menu-basket-display");
+            const listEl = document.getElementById("menu-drawer-list");
+            const emptyEl = document.getElementById("menu-drawer-empty");
+            const totalEl = document.getElementById("menu-total-price");
+            const generateBtn = document.getElementById("menu-generate-table");
+            const clearBtn = document.getElementById("menu-clear-all");
+            const outputEl = document.getElementById("menu-table-output");
+
+            if (!drawer || !openBtn || !listEl || !basketDisplayEl || !totalEl) return;
+
+            let basketDisplayMode = "count";
+            let basketRotateTimer = null;
+
+            function makeItemKey(item) {
+                return [
+                    item.category || "",
+                    item.name || "",
+                    String(item.price || 0),
+                ].join("::");
+            }
+
+            function normalizeMenuItems(raw) {
+                if (!Array.isArray(raw)) return [];
+
+                const grouped = new Map();
+
+                raw.forEach((item) => {
+                    if (!item || typeof item !== "object") return;
+
+                    const name = item.name || "";
+                    const category = item.category || "";
+                    const price = Number(item.price) || 0;
+                    const rawText = item.raw || name;
+                    const key = makeItemKey({ name, category, price });
+                    const addQty = Number(item.qty) > 0 ? Number(item.qty) : 1;
+
+                    if (grouped.has(key)) {
+                        grouped.get(key).qty += addQty;
+                    } else {
+                        grouped.set(key, {
+                            name,
+                            category,
+                            price,
+                            raw: rawText,
+                            qty: addQty,
+                        });
+                    }
+                });
+
+                return Array.from(grouped.values());
+            }
+
+            function loadMenu() {
+                try {
+                    const raw = localStorage.getItem(STORAGE_KEY);
+                    const parsed = raw ? JSON.parse(raw) : [];
+                    return normalizeMenuItems(parsed);
+                } catch {
+                    return [];
+                }
+            }
+
+            function saveMenu(items) {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+            }
+
+            function formatPrice(value) {
+                const number = Number(value) || 0;
+                return "$" + number.toLocaleString("zh-TW");
+            }
+
+            function getMenu() {
+                return loadMenu();
+            }
+
+            function getMenuPieceCount(items) {
+                return items.reduce((sum, item) => sum + (Number(item.qty) || 0), 0);
+            }
+
+            function getMenuTotal(items) {
+                return items.reduce(
+                    (sum, item) => sum + (Number(item.price) || 0) * (Number(item.qty) || 0),
+                    0
+                );
+            }
+
+            function setMenu(items) {
+                saveMenu(items);
+                renderMenu();
+                document.dispatchEvent(new CustomEvent("menuChanged"));
+            }
+
+            function updateItemQty(index, delta) {
+                const items = getMenu();
+                const item = items[index];
+                if (!item) return;
+
+                const nextQty = (Number(item.qty) || 0) + delta;
+                if (nextQty <= 0) {
+                    items.splice(index, 1);
+                } else {
+                    item.qty = nextQty;
+                }
+
+                setMenu(items);
+            }
+
+            function getItemFromDataset(el) {
+                return {
+                    name: el.dataset.name || "",
+                    category: el.dataset.category || "",
+                    price: Number(el.dataset.price || 0),
+                    raw: el.dataset.raw || "",
+                };
+            }
+
+            function changeItemQtyByKey(key, delta) {
+                const items = getMenu();
+                const index = items.findIndex((x) => makeItemKey(x) === key);
+                if (index === -1) return;
+                updateItemQty(index, delta);
+            }
+
+            function syncAddButtons() {
+                const qtyByKey = new Map();
+                getMenu().forEach((item) => {
+                    const key = makeItemKey(item);
+                    qtyByKey.set(key, (qtyByKey.get(key) || 0) + (Number(item.qty) || 0));
+                });
+
+                document.querySelectorAll(".menu-add-controls").forEach((controls) => {
+                    const addBtn = controls.querySelector(".menu-add-btn");
+                    if (!addBtn) return;
+
+                    const key = makeItemKey(getItemFromDataset(addBtn));
+                    const qty = qtyByKey.get(key) || 0;
+                    const hasQty = qty > 0;
+
+                    controls.classList.toggle("has-qty", hasQty);
+
+                    const qtyEl = controls.querySelector(".menu-add-qty");
+                    if (qtyEl) {
+                        qtyEl.textContent = String(qty);
+                        qtyEl.setAttribute("aria-hidden", hasQty ? "false" : "true");
+                    }
+
+                    addBtn.title = hasQty ? "再加 1 件（目前 " + qty + " 件）" : "加入菜單";
+                });
+            }
+
+            function updateBasketButtonDisplay() {
+                const items = getMenu();
+                const pieceCount = getMenuPieceCount(items);
+                const total = getMenuTotal(items);
+
+                if (pieceCount === 0) {
+                    basketDisplayEl.textContent = "菜單";
+                    openBtn.title = "開啟電腦菜單";
+                    return;
+                }
+
+                if (basketDisplayMode === "count") {
+                    basketDisplayEl.textContent = pieceCount + " 件";
+                    openBtn.title = "已選 " + pieceCount + " 件零組件";
+                } else {
+                    basketDisplayEl.textContent = formatPrice(total);
+                    openBtn.title = "總金額 " + formatPrice(total);
+                }
+            }
+
+            function startBasketButtonRotation() {
+                if (basketRotateTimer) {
+                    clearInterval(basketRotateTimer);
+                }
+
+                basketRotateTimer = setInterval(function () {
+                    const pieceCount = getMenuPieceCount(getMenu());
+                    if (pieceCount === 0) {
+                        basketDisplayMode = "count";
+                        updateBasketButtonDisplay();
+                        return;
+                    }
+
+                    basketDisplayMode = basketDisplayMode === "count" ? "price" : "count";
+                    updateBasketButtonDisplay();
+                }, 2500);
+            }
+
+            function openDrawer() {
+                drawer.classList.add("open");
+                drawer.setAttribute("aria-hidden", "false");
+                if (overlay) overlay.hidden = false;
+            }
+
+            function closeDrawer() {
+                drawer.classList.remove("open");
+                drawer.setAttribute("aria-hidden", "true");
+                if (overlay) overlay.hidden = true;
+            }
+
+            function renderMenu() {
+                const items = getMenu();
+                const total = getMenuTotal(items);
+                const pieceCount = getMenuPieceCount(items);
+
+                updateBasketButtonDisplay();
+                syncAddButtons();
+                totalEl.textContent = formatPrice(total);
+
+                if (emptyEl) {
+                    emptyEl.hidden = pieceCount > 0;
+                }
+
+                listEl.replaceChildren();
+
+                items.forEach((item, index) => {
+                    const qty = Number(item.qty) || 0;
+                    const subtotal = (Number(item.price) || 0) * qty;
+
+                    const card = document.createElement("div");
+                    card.className = "menu-part-card";
+
+                    const info = document.createElement("div");
+
+                    const category = document.createElement("div");
+                    category.className = "menu-part-category";
+                    category.textContent = item.category || "未分類";
+
+                    const name = document.createElement("div");
+                    name.className = "menu-part-name";
+                    name.textContent = item.name || "";
+
+                    const unitPrice = document.createElement("div");
+                    unitPrice.className = "menu-part-subtotal";
+                    unitPrice.textContent = "單價 " + formatPrice(item.price);
+
+                    info.appendChild(category);
+                    info.appendChild(name);
+                    info.appendChild(unitPrice);
+
+                    const price = document.createElement("div");
+                    price.className = "menu-part-price";
+                    price.textContent = formatPrice(subtotal);
+
+                    const qtyRow = document.createElement("div");
+                    qtyRow.className = "menu-part-qty";
+
+                    const minusBtn = document.createElement("button");
+                    minusBtn.type = "button";
+                    minusBtn.className = "menu-qty-btn";
+                    minusBtn.textContent = "−";
+                    minusBtn.setAttribute("aria-label", "減少數量");
+                    minusBtn.addEventListener("click", function () {
+                        updateItemQty(index, -1);
+                    });
+
+                    const qtyValue = document.createElement("span");
+                    qtyValue.className = "menu-qty-value";
+                    qtyValue.textContent = String(qty);
+
+                    const plusBtn = document.createElement("button");
+                    plusBtn.type = "button";
+                    plusBtn.className = "menu-qty-btn";
+                    plusBtn.textContent = "+";
+                    plusBtn.setAttribute("aria-label", "增加數量");
+                    plusBtn.addEventListener("click", function () {
+                        updateItemQty(index, 1);
+                    });
+
+                    qtyRow.appendChild(minusBtn);
+                    qtyRow.appendChild(qtyValue);
+                    qtyRow.appendChild(plusBtn);
+
+                    card.appendChild(info);
+                    card.appendChild(price);
+                    card.appendChild(qtyRow);
+                    listEl.appendChild(card);
+                });
+            }
+
+            function parseNotebookDataset(el) {
+                try {
+                    return JSON.parse(el.dataset.notebook || "{}");
+                } catch {
+                    return {};
+                }
+            }
+
+            function addItemFromButton(btn) {
+                const item = {
+                    name: btn.dataset.name || "",
+                    category: btn.dataset.category || "",
+                    price: Number(btn.dataset.price || 0),
+                    raw: btn.dataset.raw || "",
+                };
+
+                const specs = parseNotebookDataset(btn);
+                const items = getMenu();
+                const key = makeItemKey(item);
+                const existing = items.find((x) => makeItemKey(x) === key);
+
+                if (existing) {
+                    existing.qty = (Number(existing.qty) || 0) + 1;
+                    if (!existing.notebookSpecs || !Object.keys(existing.notebookSpecs).length) {
+                        existing.notebookSpecs = specs;
+                    }
+                } else {
+                    items.push({
+                        name: item.name,
+                        category: item.category,
+                        price: item.price,
+                        raw: item.raw,
+                        qty: 1,
+                        notebookSpecs: specs,
+                    });
+                }
+
+                setMenu(items);
+            }
+
+            function buildMarkdownTable() {
+                const items = getMenu();
+                const total = getMenuTotal(items);
+
+                const lines = [
+                    "| 類別 | 品名 | 數量 | 單價 | 小計 |",
+                    "|---|---|---:|---:|---:|",
+                ];
+
+                items.forEach((item) => {
+                    const category = String(item.category || "").replaceAll("|", "｜");
+                    const name = String(item.name || "").replaceAll("|", "｜");
+                    const qty = Number(item.qty) || 0;
+                    const unit = Number(item.price) || 0;
+                    const subtotal = unit * qty;
+                    lines.push(
+                        "| " + category + " | " + name + " | " + qty + " | "
+                        + formatPrice(unit) + " | " + formatPrice(subtotal) + " |"
+                    );
+                });
+
+                lines.push("|  |  |  | **總金額** | **" + formatPrice(total) + "** |");
+
+                return lines.join("\n");
+            }
+
+            document.addEventListener("click", function (event) {
+                const minusBtn = event.target.closest(".menu-minus-btn");
+                if (minusBtn) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    const key = makeItemKey(getItemFromDataset(minusBtn));
+                    changeItemQtyByKey(key, -1);
+                    return;
+                }
+
+                const btn = event.target.closest(".menu-add-btn");
+                if (!btn) return;
+
+                event.preventDefault();
+                event.stopPropagation();
+                addItemFromButton(btn);
+            });
+
+            openBtn.addEventListener("click", openDrawer);
+
+            if (closeBtn) {
+                closeBtn.addEventListener("click", closeDrawer);
+            }
+
+            if (overlay) {
+                overlay.addEventListener("click", closeDrawer);
+            }
+
+            document.addEventListener("keydown", function (event) {
+                if (event.key === "Escape") {
+                    closeDrawer();
+                }
+            });
+
+            if (clearBtn) {
+                clearBtn.addEventListener("click", function () {
+                    if (!confirm("確定要清空電腦菜單嗎？")) return;
+                    setMenu([]);
+                });
+            }
+
+            if (generateBtn) {
+                generateBtn.addEventListener("click", function () {
+                    const table = buildMarkdownTable();
+
+                    if (outputEl) {
+                        outputEl.hidden = false;
+                        outputEl.value = table;
+                        outputEl.focus();
+                    }
+
+                    generateBtn.textContent = "已生成";
+                    setTimeout(function () {
+                        generateBtn.textContent = "生成表格";
+                    }, 1200);
+                });
+            }
+
+            renderMenu();
+            startBasketButtonRotation();
+        })();
+    </script>
+
+    <script>
+        (function () {
+            const STORAGE_KEY = "coolpcSpecNotebook";
+            const defsEl = document.getElementById("notebook-field-defs");
+            const drawer = document.getElementById("notebook-drawer");
+            const openBtn = document.getElementById("open-notebook-btn");
+            const closeBtn = document.getElementById("notebook-drawer-close");
+            const tableEl = document.getElementById("notebook-table");
+            const headEl = document.getElementById("notebook-table-head");
+            const bodyEl = document.getElementById("notebook-table-body");
+            const addRowBtn = document.getElementById("notebook-add-row");
+            const addColBtn = document.getElementById("notebook-add-col");
+            const MENU_STORAGE_KEY = "coolpcPcBuildMenu";
+
+            if (!defsEl || !drawer || !tableEl || !headEl || !bodyEl) return;
+
+            const FIELD_DEFS = JSON.parse(defsEl.textContent || "[]").filter(
+                (f) => f.field !== "psu_wattage"
+            );
+            const fieldMap = Object.fromEntries(FIELD_DEFS.map((f) => [f.field, f]));
+            const DEFAULT_COLUMNS = [
+                "gpu_length",
+                "case_gpu_length",
+                "case_cpu_height",
+                "cooler_height",
+            ].filter((field) => fieldMap[field]);
+
+            function makeItemKey(item) {
+                return [
+                    item.category || "",
+                    item.name || "",
+                    String(item.price || 0),
+                ].join("::");
+            }
+
+            function sanitizeNotebookData(data) {
+                data.columns = (data.columns || []).filter((field) => field !== "psu_wattage");
+                data.rows.forEach((row) => {
+                    if (row.cells && row.cells.psu_wattage) {
+                        delete row.cells.psu_wattage;
+                    }
+                });
+                return data;
+            }
+
+            function newRowId() {
+                return "row-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+            }
+
+            function loadNotebook() {
+                try {
+                    const raw = localStorage.getItem(STORAGE_KEY);
+                    const parsed = raw ? JSON.parse(raw) : null;
+                    if (!parsed || typeof parsed !== "object") {
+                        return sanitizeNotebookData({ columns: DEFAULT_COLUMNS.slice(), rows: [] });
+                    }
+                    const columns = Array.isArray(parsed.columns) && parsed.columns.length
+                        ? parsed.columns.map((c) => String(c))
+                        : DEFAULT_COLUMNS.slice();
+                    const rows = Array.isArray(parsed.rows) ? parsed.rows : [];
+                    return sanitizeNotebookData({ columns, rows });
+                } catch {
+                    return sanitizeNotebookData({ columns: DEFAULT_COLUMNS.slice(), rows: [] });
+                }
+            }
+
+            function saveNotebook(data) {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+            }
+
+            function getNotebook() {
+                return loadNotebook();
+            }
+
+            function setNotebook(data) {
+                saveNotebook(data);
+                renderNotebook();
+            }
+
+            function fieldLabel(field) {
+                if (!field) return "（不選）";
+                return fieldMap[field]?.label || field;
+            }
+
+            function fieldUnit(field) {
+                return fieldMap[field]?.unit || "";
+            }
+
+            function buildFieldOptions(selected) {
+                const select = document.createElement("select");
+                select.className = "notebook-col-select";
+
+                const empty = document.createElement("option");
+                empty.value = "";
+                empty.textContent = "（不選）";
+                select.appendChild(empty);
+
+                FIELD_DEFS.forEach((def) => {
+                    const opt = document.createElement("option");
+                    opt.value = def.field;
+                    opt.textContent = def.label;
+                    if (def.field === selected) {
+                        opt.selected = true;
+                    }
+                    select.appendChild(opt);
+                });
+
+                return select;
+            }
+
+            function openDrawer() {
+                drawer.classList.add("open");
+                drawer.setAttribute("aria-hidden", "false");
+                if (openBtn) openBtn.classList.add("active");
+            }
+
+            function closeDrawer() {
+                drawer.classList.remove("open");
+                drawer.setAttribute("aria-hidden", "true");
+                if (openBtn) openBtn.classList.remove("active");
+            }
+
+            function updateNotebookColgroup(columnCount) {
+                let colgroup = tableEl.querySelector("colgroup");
+                if (!colgroup) {
+                    colgroup = document.createElement("colgroup");
+                    tableEl.insertBefore(colgroup, headEl);
+                }
+                colgroup.replaceChildren();
+
+                const colNote = document.createElement("col");
+                colNote.className = "notebook-col-note";
+                colgroup.appendChild(colNote);
+
+                for (let i = 0; i < columnCount; i += 1) {
+                    colgroup.appendChild(document.createElement("col"));
+                }
+
+                const colActions = document.createElement("col");
+                colActions.className = "notebook-col-actions";
+                colgroup.appendChild(colActions);
+            }
+
+            function buildCellsFromSpecs(columns, specs) {
+                const cells = {};
+                columns.forEach((field) => {
+                    if (field && specs && specs[field] !== undefined && specs[field] !== "") {
+                        cells[field] = String(specs[field]);
+                    }
+                });
+                return cells;
+            }
+
+            function findSpecsFromDom(key) {
+                const buttons = document.querySelectorAll(".menu-add-btn");
+                for (const btn of buttons) {
+                    if (makeItemKey({
+                        name: btn.dataset.name || "",
+                        category: btn.dataset.category || "",
+                        price: Number(btn.dataset.price || 0),
+                    }) !== key) {
+                        continue;
+                    }
+                    try {
+                        return JSON.parse(btn.dataset.notebook || "{}");
+                    } catch {
+                        return {};
+                    }
+                }
+                return {};
+            }
+
+            function loadMenuItemsForNotebook() {
+                try {
+                    const raw = localStorage.getItem(MENU_STORAGE_KEY);
+                    const parsed = raw ? JSON.parse(raw) : [];
+                    if (!Array.isArray(parsed)) return [];
+
+                    const grouped = new Map();
+                    parsed.forEach((item) => {
+                        if (!item || typeof item !== "object") return;
+                        const key = makeItemKey(item);
+                        const addQty = Number(item.qty) > 0 ? Number(item.qty) : 1;
+                        if (grouped.has(key)) {
+                            grouped.get(key).qty += addQty;
+                        } else {
+                            grouped.set(key, {
+                                name: item.name || "",
+                                category: item.category || "",
+                                price: Number(item.price) || 0,
+                                raw: item.raw || "",
+                                qty: addQty,
+                                notebookSpecs: item.notebookSpecs || {},
+                            });
+                        }
+                    });
+                    return Array.from(grouped.values());
+                } catch {
+                    return [];
+                }
+            }
+
+            function syncFromMenuBasket() {
+                const menuItems = loadMenuItemsForNotebook();
+                const menuKeys = new Set(menuItems.map((item) => makeItemKey(item)));
+                const nb = getNotebook();
+
+                menuItems.forEach((menuItem) => {
+                    const key = makeItemKey(menuItem);
+                    const specs = menuItem.notebookSpecs && Object.keys(menuItem.notebookSpecs).length
+                        ? menuItem.notebookSpecs
+                        : findSpecsFromDom(key);
+                    let row = nb.rows.find((r) => r.sourceKey === key);
+
+                    if (!row) {
+                        nb.rows.push({
+                            id: newRowId(),
+                            note: menuItem.name || "",
+                            category: menuItem.category || "",
+                            sourceKey: key,
+                            cells: buildCellsFromSpecs(nb.columns, specs),
+                        });
+                        return;
+                    }
+
+                    row.note = menuItem.name || row.note;
+                    row.category = menuItem.category || row.category;
+                    if (!row.cells) row.cells = {};
+                    nb.columns.forEach((field) => {
+                        if (field && specs[field] && !row.cells[field]) {
+                            row.cells[field] = String(specs[field]);
+                        }
+                    });
+                });
+
+                nb.rows = nb.rows.filter((row) => !row.sourceKey || menuKeys.has(row.sourceKey));
+                saveNotebook(nb);
+                renderNotebook();
+            }
+
+            function renderNotebook() {
+                const data = getNotebook();
+                headEl.replaceChildren();
+                bodyEl.replaceChildren();
+                updateNotebookColgroup(data.columns.length);
+
+                const headRow = document.createElement("tr");
+
+                const noteTh = document.createElement("th");
+                noteTh.className = "notebook-th-note";
+                noteTh.textContent = "品名 / 備註";
+                headRow.appendChild(noteTh);
+
+                data.columns.forEach((field, colIndex) => {
+                    const th = document.createElement("th");
+                    const select = buildFieldOptions(field);
+                    select.addEventListener("change", function () {
+                        const nb = getNotebook();
+                        nb.columns[colIndex] = select.value;
+                        const unitEl = th.querySelector(".notebook-col-unit");
+                        if (unitEl) unitEl.textContent = fieldUnit(select.value);
+                        setNotebook(nb);
+                    });
+
+                    const unit = document.createElement("span");
+                    unit.className = "notebook-col-unit";
+                    unit.textContent = fieldUnit(select.value);
+
+                    th.appendChild(select);
+                    th.appendChild(unit);
+                    headRow.appendChild(th);
+                });
+
+                const headActions = document.createElement("th");
+                headActions.className = "notebook-th-actions";
+                headActions.textContent = "操作";
+                headRow.appendChild(headActions);
+                headEl.appendChild(headRow);
+
+                data.rows.forEach((row, rowIndex) => {
+                    const tr = document.createElement("tr");
+
+                    const noteTd = document.createElement("td");
+                    noteTd.className = "notebook-td-note";
+                    const noteInput = document.createElement("input");
+                    noteInput.type = "text";
+                    noteInput.className = "notebook-cell-input";
+                    noteInput.value = row.note || "";
+                    noteInput.placeholder = "品名或備註";
+                    noteInput.addEventListener("change", function () {
+                        const nb = getNotebook();
+                        nb.rows[rowIndex].note = noteInput.value.trim();
+                        setNotebook(nb);
+                    });
+                    noteTd.appendChild(noteInput);
+                    tr.appendChild(noteTd);
+
+                    data.columns.forEach((field) => {
+                        const td = document.createElement("td");
+                        const input = document.createElement("input");
+                        input.type = "text";
+                        input.className = "notebook-cell-input";
+                        input.value = (row.cells && row.cells[field]) || "";
+                        input.placeholder = field ? fieldUnit(field) : "";
+                        input.addEventListener("change", function () {
+                            const nb = getNotebook();
+                            if (!nb.rows[rowIndex].cells) {
+                                nb.rows[rowIndex].cells = {};
+                            }
+                            const val = input.value.trim();
+                            if (val) {
+                                nb.rows[rowIndex].cells[field] = val;
+                            } else {
+                                delete nb.rows[rowIndex].cells[field];
+                            }
+                            setNotebook(nb);
+                        });
+                        td.appendChild(input);
+                        tr.appendChild(td);
+                    });
+
+                    const actionsTd = document.createElement("td");
+                    actionsTd.className = "notebook-td-actions";
+                    const actions = document.createElement("div");
+                    actions.className = "notebook-row-actions";
+
+                    const removeBtn = document.createElement("button");
+                    removeBtn.type = "button";
+                    removeBtn.className = "notebook-icon-btn danger";
+                    removeBtn.textContent = "×";
+                    removeBtn.title = "刪除此列";
+                    removeBtn.addEventListener("click", function () {
+                        const nb = getNotebook();
+                        nb.rows.splice(rowIndex, 1);
+                        setNotebook(nb);
+                    });
+
+                    actions.appendChild(removeBtn);
+                    actionsTd.appendChild(actions);
+                    tr.appendChild(actionsTd);
+                    bodyEl.appendChild(tr);
+                });
+            }
+
+            function addEmptyRow(note, category, sourceKey, specs) {
+                const nb = getNotebook();
+                const cells = {};
+                if (specs && typeof specs === "object") {
+                    nb.columns.forEach((field) => {
+                        if (field && specs[field] !== undefined && specs[field] !== "") {
+                            cells[field] = String(specs[field]);
+                        }
+                    });
+                }
+                nb.rows.push({
+                    id: newRowId(),
+                    note: note || "",
+                    category: category || "",
+                    sourceKey: sourceKey || "",
+                    cells: cells,
+                });
+                setNotebook(nb);
+            }
+
+            if (openBtn) {
+                openBtn.addEventListener("click", function () {
+                    if (drawer.classList.contains("open")) {
+                        closeDrawer();
+                        return;
+                    }
+                    syncFromMenuBasket();
+                    openDrawer();
+                });
+            }
+
+            if (closeBtn) {
+                closeBtn.addEventListener("click", closeDrawer);
+            }
+
+            document.addEventListener("keydown", function (event) {
+                if (event.key === "Escape" && drawer.classList.contains("open")) {
+                    closeDrawer();
+                }
+            });
+
+            if (addRowBtn) {
+                addRowBtn.addEventListener("click", function () {
+                    addEmptyRow("", "", "", {});
+                });
+            }
+
+            if (addColBtn) {
+                addColBtn.addEventListener("click", function () {
+                    const nb = getNotebook();
+                    nb.columns.push("");
+                    setNotebook(nb);
+                });
+            }
+
+            document.addEventListener("menuChanged", function () {
+                if (drawer.classList.contains("open")) {
+                    syncFromMenuBasket();
+                }
+            });
+
+            syncFromMenuBasket();
+        })();
+    </script>
+</body>
+
+</html>
