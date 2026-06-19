@@ -1879,6 +1879,8 @@
 
             <div class="menu-actions">
                 <button type="button" id="menu-generate-table" class="btn btn-primary">生成表格</button>
+                <button type="button" id="menu-copy-table" class="btn btn-secondary" hidden>複製</button>
+                <button type="button" id="menu-export-csv" class="btn btn-secondary" hidden>匯出 CSV</button>
                 <button type="button" id="menu-clear-all" class="btn btn-secondary">清空菜單</button>
             </div>
 
@@ -2205,6 +2207,8 @@
             const emptyEl = document.getElementById("menu-drawer-empty");
             const totalEl = document.getElementById("menu-total-price");
             const generateBtn = document.getElementById("menu-generate-table");
+            const copyBtn = document.getElementById("menu-copy-table");
+            const exportCsvBtn = document.getElementById("menu-export-csv");
             const clearBtn = document.getElementById("menu-clear-all");
             const outputEl = document.getElementById("menu-table-output");
 
@@ -2546,6 +2550,94 @@
                 return lines.join("\n");
             }
 
+            function escapeCsvField(value) {
+                const text = String(value ?? "");
+                if (/[",\n\r]/.test(text)) {
+                    return '"' + text.replace(/"/g, '""') + '"';
+                }
+                return text;
+            }
+
+            function buildCsvTable() {
+                const items = getMenu();
+                const total = getMenuTotal(items);
+                const lines = [
+                    ["類別", "品名", "數量", "單價", "小計"].map(escapeCsvField).join(","),
+                ];
+
+                items.forEach((item) => {
+                    const qty = Number(item.qty) || 0;
+                    const unit = Number(item.price) || 0;
+                    lines.push([
+                        escapeCsvField(item.category || ""),
+                        escapeCsvField(item.name || ""),
+                        escapeCsvField(qty),
+                        escapeCsvField(unit),
+                        escapeCsvField(unit * qty),
+                    ].join(","));
+                });
+
+                lines.push([
+                    escapeCsvField(""),
+                    escapeCsvField(""),
+                    escapeCsvField(""),
+                    escapeCsvField("總金額"),
+                    escapeCsvField(total),
+                ].join(","));
+
+                return "\uFEFF" + lines.join("\r\n");
+            }
+
+            function setTableOutputActionsVisible(visible) {
+                if (outputEl) {
+                    outputEl.hidden = !visible;
+                }
+                if (copyBtn) {
+                    copyBtn.hidden = !visible;
+                }
+                if (exportCsvBtn) {
+                    exportCsvBtn.hidden = !visible;
+                }
+            }
+
+            function flashButtonLabel(btn, doneLabel, originalLabel, duration) {
+                if (!btn) return;
+                btn.textContent = doneLabel;
+                setTimeout(function () {
+                    btn.textContent = originalLabel;
+                }, duration || 1200);
+            }
+
+            async function copyTableToClipboard(text) {
+                if (navigator.clipboard && window.isSecureContext) {
+                    await navigator.clipboard.writeText(text);
+                    return;
+                }
+
+                if (!outputEl) {
+                    throw new Error("clipboard unavailable");
+                }
+
+                outputEl.hidden = false;
+                outputEl.focus();
+                outputEl.select();
+                const copied = document.execCommand("copy");
+                if (!copied) {
+                    throw new Error("copy failed");
+                }
+            }
+
+            function downloadCsv(content) {
+                const blob = new Blob([content], { type: "text/csv;charset=utf-8;" });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                const stamp = new Date().toISOString().slice(0, 10);
+                link.href = url;
+                link.download = "coolpc-menu-" + stamp + ".csv";
+                link.click();
+                URL.revokeObjectURL(url);
+            }
+
             document.addEventListener("click", function (event) {
                 const minusBtn = event.target.closest(".menu-minus-btn");
                 if (minusBtn) {
@@ -2584,6 +2676,10 @@
                 clearBtn.addEventListener("click", function () {
                     if (!confirm("確定要清空電腦菜單嗎？")) return;
                     setMenu([]);
+                    if (outputEl) {
+                        outputEl.value = "";
+                    }
+                    setTableOutputActionsVisible(false);
                 });
             }
 
@@ -2592,15 +2688,34 @@
                     const table = buildMarkdownTable();
 
                     if (outputEl) {
-                        outputEl.hidden = false;
                         outputEl.value = table;
                         outputEl.focus();
                     }
 
-                    generateBtn.textContent = "已生成";
-                    setTimeout(function () {
-                        generateBtn.textContent = "生成表格";
-                    }, 1200);
+                    setTableOutputActionsVisible(true);
+                    flashButtonLabel(generateBtn, "已生成", "生成表格");
+                });
+            }
+
+            if (copyBtn) {
+                copyBtn.addEventListener("click", async function () {
+                    const text = outputEl && outputEl.value
+                        ? outputEl.value
+                        : buildMarkdownTable();
+
+                    try {
+                        await copyTableToClipboard(text);
+                        flashButtonLabel(copyBtn, "已複製", "複製");
+                    } catch {
+                        alert("複製失敗，請手動選取下方表格內容。");
+                    }
+                });
+            }
+
+            if (exportCsvBtn) {
+                exportCsvBtn.addEventListener("click", function () {
+                    downloadCsv(buildCsvTable());
+                    flashButtonLabel(exportCsvBtn, "已匯出", "匯出 CSV");
                 });
             }
 
