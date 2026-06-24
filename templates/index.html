@@ -15,6 +15,25 @@
             history.replaceState(null, "", url);
         }
     </script>
+    <script>
+        (function () {
+            const FILTER_KEY = "coolpcLastFilters";
+            const RESTORE_KEY = "coolpcFiltersRestored";
+            if (sessionStorage.getItem(RESTORE_KEY)) return;
+
+            const saved = localStorage.getItem(FILTER_KEY);
+            if (!saved) return;
+
+            const current = new URLSearchParams(window.location.search);
+            const keys = Array.from(current.keys());
+            const isDefault = keys.length === 0
+                || (keys.length === 1 && current.get("category") === "__ALL__");
+            if (!isDefault) return;
+
+            sessionStorage.setItem(RESTORE_KEY, "1");
+            window.location.replace(window.location.pathname + "?" + saved);
+        })();
+    </script>
     <style>
         body {
             font-family: "Microsoft JhengHei", Arial, sans-serif;
@@ -740,6 +759,143 @@
 
         .menu-basket-btn:hover {
             background: #15803d;
+        }
+
+        .notify-btn {
+            position: fixed;
+            right: 128px;
+            bottom: 24px;
+            z-index: 21;
+            min-width: 72px;
+            height: 44px;
+            padding: 0 14px;
+            border: 0;
+            border-radius: 999px;
+            background: #d97706;
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 6px 18px rgba(217, 119, 6, 0.28);
+            white-space: nowrap;
+        }
+
+        .notify-btn:hover {
+            background: #b45309;
+        }
+
+        .notify-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 18px;
+            height: 18px;
+            margin-left: 6px;
+            padding: 0 5px;
+            border-radius: 999px;
+            background: #ffffff;
+            color: #b45309;
+            font-size: 11px;
+            font-weight: 800;
+            vertical-align: middle;
+        }
+
+        .notify-badge[hidden] {
+            display: none !important;
+        }
+
+        .notify-drawer-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 31;
+            background: rgba(15, 23, 42, 0.35);
+        }
+
+        .notify-drawer {
+            position: fixed;
+            top: 0;
+            right: 0;
+            z-index: 32;
+            width: min(420px, 92vw);
+            height: 100vh;
+            background: #ffffff;
+            box-shadow: -12px 0 28px rgba(15, 23, 42, 0.22);
+            transform: translateX(105%);
+            transition: transform 0.2s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .notify-drawer.open {
+            transform: translateX(0);
+        }
+
+        .notify-drawer-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 18px 20px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .notify-drawer-header h2 {
+            margin: 0 0 4px;
+            font-size: 22px;
+        }
+
+        .notify-drawer-actions {
+            display: flex;
+            gap: 8px;
+            padding: 12px 20px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .notify-drawer-list {
+            flex: 1;
+            overflow: auto;
+            padding: 12px 20px 20px;
+        }
+
+        .notify-item {
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 12px 14px;
+            margin-bottom: 10px;
+            background: #fffbeb;
+        }
+
+        .notify-item.read {
+            background: #f8fafc;
+            opacity: 0.92;
+        }
+
+        .notify-item-title {
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+
+        .notify-item-message {
+            font-size: 14px;
+            line-height: 1.5;
+            color: #334155;
+        }
+
+        .notify-item-time {
+            margin-top: 6px;
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        .notify-drawer-empty {
+            color: #64748b;
+            font-size: 14px;
+            padding: 8px 0;
+        }
+
+        .filter-toast.warning {
+            background: #b45309;
+            color: #fff;
         }
 
         #menu-basket-display {
@@ -1850,9 +2006,32 @@
         ↑
     </button>
 
+    <button type="button" id="notify-btn" class="notify-btn" title="查看通知">
+        通知<span id="notify-badge" class="notify-badge" hidden>0</span>
+    </button>
+
     <button type="button" id="menu-basket-btn" class="menu-basket-btn" title="開啟電腦菜單">
         <span id="menu-basket-display">菜單</span>
     </button>
+
+    <div id="notify-drawer-overlay" class="notify-drawer-overlay" hidden></div>
+
+    <aside id="notify-drawer" class="notify-drawer" aria-hidden="true">
+        <div class="notify-drawer-header">
+            <div>
+                <h2>通知</h2>
+                <p class="muted">已失效的菜單品項與篩選條件會顯示在這裡。</p>
+            </div>
+            <button type="button" id="notify-drawer-close" class="menu-drawer-close" aria-label="關閉">×</button>
+        </div>
+        <div class="notify-drawer-actions">
+            <button type="button" id="notify-mark-all-read" class="btn btn-secondary">全部標為已讀</button>
+            <button type="button" id="notify-clear-all" class="btn btn-secondary">清除通知</button>
+        </div>
+        <div id="notify-drawer-list" class="notify-drawer-list">
+            <p class="notify-drawer-empty">目前沒有通知。</p>
+        </div>
+    </aside>
 
     <div id="menu-drawer-overlay" class="menu-drawer-overlay" hidden></div>
 
@@ -1918,6 +2097,7 @@
     </aside>
 
     <script id="notebook-field-defs" type="application/json">{{ notebook_fields | tojson }}</script>
+    <script id="catalog-keys" type="application/json">{{ catalog_keys | tojson }}</script>
 
     <script>
         (function () {
@@ -2130,8 +2310,21 @@
             showFilterToast(loadingMessage, loadingType);
         }
 
+        function saveLastFiltersFromForm(form) {
+            if (!form) return;
+            const params = new URLSearchParams();
+            const formData = new FormData(form);
+            formData.forEach(function (value, key) {
+                if (String(value).trim() !== "") {
+                    params.append(key, value);
+                }
+            });
+            localStorage.setItem("coolpcLastFilters", params.toString());
+        }
+
         document.querySelectorAll(".category-form, #conditions-form").forEach(function (form) {
             form.addEventListener("submit", function () {
+                saveLastFiltersFromForm(form);
                 markActionPending("filter", "篩選中，請稍候…");
             });
         });
@@ -2153,6 +2346,7 @@
         const resetLink = document.getElementById("reset-link");
         if (resetLink) {
             resetLink.addEventListener("click", function () {
+                localStorage.removeItem("coolpcLastFilters");
                 markActionPending("reset", "重置中，請稍候…");
             });
         }
@@ -3130,6 +3324,344 @@
             });
 
             syncFromMenuBasket();
+        })();
+    </script>
+
+    <script>
+        (function () {
+            const NOTIF_KEY = "coolpcNotifications";
+            const MENU_KEY = "coolpcPcBuildMenu";
+            const FILTER_KEY = "coolpcLastFilters";
+
+            const notifyBtn = document.getElementById("notify-btn");
+            const notifyBadge = document.getElementById("notify-badge");
+            const notifyDrawer = document.getElementById("notify-drawer");
+            const notifyOverlay = document.getElementById("notify-drawer-overlay");
+            const notifyCloseBtn = document.getElementById("notify-drawer-close");
+            const notifyListEl = document.getElementById("notify-drawer-list");
+            const notifyMarkAllBtn = document.getElementById("notify-mark-all-read");
+            const notifyClearBtn = document.getElementById("notify-clear-all");
+            const filterToast = document.getElementById("filter-toast");
+            const catalogEl = document.getElementById("catalog-keys");
+
+            if (!notifyBtn || !notifyDrawer || !notifyListEl) return;
+
+            const catalogKeys = new Set(
+                JSON.parse(catalogEl ? catalogEl.textContent || "[]" : "[]")
+            );
+
+            function makeMenuItemKey(item) {
+                return [
+                    item.category || "",
+                    item.name || "",
+                    String(item.price || 0),
+                ].join("::");
+            }
+
+            function loadNotifications() {
+                try {
+                    const raw = localStorage.getItem(NOTIF_KEY);
+                    const parsed = raw ? JSON.parse(raw) : [];
+                    return Array.isArray(parsed) ? parsed : [];
+                } catch {
+                    return [];
+                }
+            }
+
+            function saveNotifications(items) {
+                localStorage.setItem(NOTIF_KEY, JSON.stringify(items.slice(0, 80)));
+            }
+
+            function formatTime(iso) {
+                try {
+                    return new Date(iso).toLocaleString("zh-TW");
+                } catch {
+                    return iso || "";
+                }
+            }
+
+            function showWarningToast(message) {
+                if (!filterToast) return;
+                filterToast.className = "filter-toast warning";
+                filterToast.replaceChildren();
+                const text = document.createElement("span");
+                text.textContent = message;
+                filterToast.appendChild(text);
+                filterToast.hidden = false;
+                setTimeout(function () {
+                    filterToast.hidden = true;
+                }, 5000);
+            }
+
+            function addNotification(entry) {
+                const items = loadNotifications();
+                if (items.some(function (item) { return item.dedupeKey === entry.dedupeKey; })) {
+                    return false;
+                }
+                items.unshift({
+                    id: String(Date.now()) + "-" + Math.random().toString(36).slice(2, 8),
+                    title: entry.title,
+                    message: entry.message,
+                    kind: entry.kind || "general",
+                    dedupeKey: entry.dedupeKey,
+                    createdAt: new Date().toISOString(),
+                    unread: true,
+                });
+                saveNotifications(items);
+                return true;
+            }
+
+            function unreadCount() {
+                return loadNotifications().filter(function (item) { return item.unread; }).length;
+            }
+
+            function updateNotifyButton() {
+                const items = loadNotifications();
+                const unread = items.filter(function (item) { return item.unread; }).length;
+                notifyBtn.hidden = false;
+                if (notifyBadge) {
+                    notifyBadge.hidden = unread === 0;
+                    notifyBadge.textContent = String(unread);
+                }
+            }
+
+            function renderNotificationList() {
+                const items = loadNotifications();
+                notifyListEl.replaceChildren();
+
+                if (!items.length) {
+                    const empty = document.createElement("p");
+                    empty.className = "notify-drawer-empty";
+                    empty.textContent = "目前沒有通知。";
+                    notifyListEl.appendChild(empty);
+                    updateNotifyButton();
+                    return;
+                }
+
+                items.forEach(function (item) {
+                    const card = document.createElement("div");
+                    card.className = "notify-item" + (item.unread ? "" : " read");
+
+                    const title = document.createElement("div");
+                    title.className = "notify-item-title";
+                    title.textContent = item.title || "通知";
+
+                    const message = document.createElement("div");
+                    message.className = "notify-item-message";
+                    message.textContent = item.message || "";
+
+                    const time = document.createElement("div");
+                    time.className = "notify-item-time";
+                    time.textContent = formatTime(item.createdAt);
+
+                    card.appendChild(title);
+                    card.appendChild(message);
+                    card.appendChild(time);
+                    notifyListEl.appendChild(card);
+                });
+
+                updateNotifyButton();
+            }
+
+            function openNotifyDrawer() {
+                const items = loadNotifications().map(function (item) {
+                    return Object.assign({}, item, { unread: false });
+                });
+                saveNotifications(items);
+                notifyDrawer.classList.add("open");
+                notifyDrawer.setAttribute("aria-hidden", "false");
+                if (notifyOverlay) notifyOverlay.hidden = false;
+                renderNotificationList();
+            }
+
+            function closeNotifyDrawer() {
+                notifyDrawer.classList.remove("open");
+                notifyDrawer.setAttribute("aria-hidden", "true");
+                if (notifyOverlay) notifyOverlay.hidden = true;
+            }
+
+            function optionExists(selector) {
+                try {
+                    return Boolean(document.querySelector(selector));
+                } catch {
+                    return false;
+                }
+            }
+
+            function validateCurrentFilters() {
+                const invalid = [];
+                const params = new URLSearchParams(window.location.search);
+
+                const category = params.get("category");
+                if (category && category !== "__ALL__") {
+                    if (!optionExists('#category option[value="' + CSS.escape(category) + '"]')) {
+                        invalid.push({
+                            dedupeKey: "filter:category:" + category,
+                            title: "篩選條件已失效",
+                            message: "類別「" + category + "」已不存在。",
+                            kind: "filter",
+                        });
+                    }
+                }
+
+                params.getAll("group").forEach(function (group) {
+                    if (!document.getElementById("group-list")) return;
+                    if (!optionExists('#group-list input[name="group"][value="' + CSS.escape(group) + '"]')) {
+                        invalid.push({
+                            dedupeKey: "filter:group:" + group,
+                            title: "篩選條件已失效",
+                            message: "內建分類「" + group + "」已不存在。",
+                            kind: "filter",
+                        });
+                    }
+                });
+
+                const brand = params.get("brand");
+                if (brand && document.getElementById("brand")) {
+                    if (!optionExists('#brand option[value="' + CSS.escape(brand) + '"]')) {
+                        invalid.push({
+                            dedupeKey: "filter:brand:" + brand,
+                            title: "篩選條件已失效",
+                            message: "品牌「" + brand + "」已不存在。",
+                            kind: "filter",
+                        });
+                    }
+                }
+
+                params.forEach(function (value, key) {
+                    if (!key.startsWith("cf_") || !value) return;
+                    if (!document.querySelector('input[name="' + CSS.escape(key) + '"]')) return;
+                    const selector = 'input[name="' + CSS.escape(key) + '"][value="' + CSS.escape(value) + '"]';
+                    if (!optionExists(selector)) {
+                        invalid.push({
+                            dedupeKey: "filter:" + key + ":" + value,
+                            title: "篩選條件已失效",
+                            message: "條件「" + value + "」已不存在。",
+                            kind: "filter",
+                        });
+                    }
+                });
+
+                return invalid;
+            }
+
+            function validateSavedFilters() {
+                const saved = localStorage.getItem(FILTER_KEY);
+                if (!saved) return [];
+
+                const invalid = [];
+                const params = new URLSearchParams(saved);
+                const category = params.get("category");
+
+                if (category && category !== "__ALL__") {
+                    if (!optionExists('#category option[value="' + CSS.escape(category) + '"]')) {
+                        invalid.push({
+                            dedupeKey: "saved:category:" + category,
+                            title: "已儲存條件已失效",
+                            message: "上次記住的類別「" + category + "」已不存在。",
+                            kind: "filter",
+                        });
+                    }
+                }
+
+                return invalid;
+            }
+
+            function validateMenuItems() {
+                if (!catalogKeys.size) return [];
+
+                let menuItems = [];
+                try {
+                    menuItems = JSON.parse(localStorage.getItem(MENU_KEY) || "[]");
+                } catch {
+                    menuItems = [];
+                }
+                if (!Array.isArray(menuItems)) return [];
+
+                const invalid = [];
+                const grouped = new Map();
+
+                menuItems.forEach(function (item) {
+                    if (!item || typeof item !== "object") return;
+                    const key = makeMenuItemKey(item);
+                    if (!grouped.has(key)) {
+                        grouped.set(key, item);
+                    }
+                });
+
+                grouped.forEach(function (item, key) {
+                    if (!catalogKeys.has(key)) {
+                        invalid.push({
+                            dedupeKey: "menu:" + key,
+                            title: "菜單品項已失效",
+                            message: "「" + (item.name || "未命名商品") + "」已不在原價屋清單中（或價格已變動）。",
+                            kind: "menu",
+                        });
+                    }
+                });
+
+                return invalid;
+            }
+
+            function runValidityChecks() {
+                if (!catalogKeys.size) return;
+
+                const findings = validateMenuItems()
+                    .concat(validateCurrentFilters())
+                    .concat(validateSavedFilters());
+
+                let added = 0;
+                findings.forEach(function (entry) {
+                    if (addNotification(entry)) {
+                        added += 1;
+                    }
+                });
+
+                updateNotifyButton();
+                renderNotificationList();
+
+                if (added > 0) {
+                    showWarningToast("有 " + added + " 項選項已失效，請點右下角「通知」查看。");
+                }
+            }
+
+            notifyBtn.addEventListener("click", openNotifyDrawer);
+
+            if (notifyCloseBtn) {
+                notifyCloseBtn.addEventListener("click", closeNotifyDrawer);
+            }
+
+            if (notifyOverlay) {
+                notifyOverlay.addEventListener("click", closeNotifyDrawer);
+            }
+
+            if (notifyMarkAllBtn) {
+                notifyMarkAllBtn.addEventListener("click", function () {
+                    const items = loadNotifications().map(function (item) {
+                        return Object.assign({}, item, { unread: false });
+                    });
+                    saveNotifications(items);
+                    renderNotificationList();
+                });
+            }
+
+            if (notifyClearBtn) {
+                notifyClearBtn.addEventListener("click", function () {
+                    if (!confirm("確定要清除所有通知嗎？")) return;
+                    saveNotifications([]);
+                    closeNotifyDrawer();
+                    renderNotificationList();
+                });
+            }
+
+            document.addEventListener("keydown", function (event) {
+                if (event.key === "Escape" && notifyDrawer.classList.contains("open")) {
+                    closeNotifyDrawer();
+                }
+            });
+
+            renderNotificationList();
+            runValidityChecks();
         })();
     </script>
 </body>

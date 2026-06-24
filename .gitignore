@@ -1,8 +1,20 @@
 __pycache__/
-*.pyc
+*.py[cod]
 *.pyo
-.env
+.Python
 .venv/
 venv/
-coolpc_debug_lines.txt
+env/
+
+# 本機除錯輸出（需 COOLPC_DEBUG=1 才會產生）
 coolpc_debug_raw.html
+coolpc_debug_lines.txt
+
+# 離線 HTML 快照（非執行所需）
+evaluate.php
+
+# 打包產物
+build/
+dist/
+*.spec.bak
+release/*.zip

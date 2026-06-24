@@ -1,0 +1,53 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pyinstaller
+
+      - name: Build executable
+        run: python -m PyInstaller --noconfirm --clean better_coolpc.spec
+
+      - name: Verify build output
+        shell: pwsh
+        run: |
+          if (-not (Test-Path "dist/BetterCoolPC/BetterCoolPC.exe")) {
+            throw "BetterCoolPC.exe was not built"
+          }
+          if (-not (Test-Path "dist/BetterCoolPC/_internal/templates/index.html")) {
+            throw "templates were not bundled"
+          }
+
+      - name: Prepare release package
+        shell: cmd
+        run: |
+          copy /Y release\Launch-BetterCoolPC.bat dist\BetterCoolPC\
+          copy /Y release\README-Windows.txt dist\BetterCoolPC\README.txt
+          powershell -NoProfile -Command "Compress-Archive -Path 'dist/BetterCoolPC/*' -DestinationPath 'BetterCoolPC-Windows-x64.zip' -Force"
+
+      - name: Upload release asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: BetterCoolPC-Windows-x64.zip
+          generate_release_notes: true

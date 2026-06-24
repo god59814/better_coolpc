@@ -1,6 +1,11 @@
 from __future__ import annotations
 
+import os
 import re
+import subprocess
+import sys
+import threading
+import webbrowser
 from typing import Any
 
 from flask import Flask, render_template, request
@@ -37,7 +42,78 @@ from test import (
     fetch_html,
 )
 
-app = Flask(__name__)
+def _resolve_template_folder() -> str | None:
+    if getattr(sys, "frozen", False):
+        base = getattr(sys, "_MEIPASS", os.path.dirname(sys.executable))
+        return os.path.join(base, "templates")
+    return None
+
+
+_template_folder = _resolve_template_folder()
+app = Flask(__name__, template_folder=_template_folder or "templates")
+
+
+def build_catalog_keys(category_blocks: dict[str, list[str]]) -> list[str]:
+    keys: list[str] = []
+    seen: set[str] = set()
+    for cat_name, block_lines in category_blocks.items():
+        for item in parse_items_from_block(block_lines, category_name=cat_name):
+            key = f"{item.get('category', '')}::{item['name']}::{item['price']}"
+            if key not in seen:
+                seen.add(key)
+                keys.append(key)
+    return keys
+
+
+def find_chromium_executable() -> str | None:
+    custom = os.environ.get("COOLPC_CHROMIUM_PATH", "").strip()
+    if custom and os.path.isfile(custom):
+        return custom
+
+    localappdata = os.environ.get("LOCALAPPDATA", "")
+    program_files = os.environ.get("ProgramFiles", r"C:\Program Files")
+    program_files_x86 = os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)")
+
+    relative_paths = (
+        r"Chromium\Application\chrome.exe",
+        r"Google\Chrome\Application\chrome.exe",
+        r"Microsoft\Edge\Application\msedge.exe",
+    )
+    bases = [localappdata, program_files, program_files_x86]
+    for base in bases:
+        if not base:
+            continue
+        for rel in relative_paths:
+            candidate = os.path.join(base, rel)
+            if os.path.isfile(candidate):
+                return candidate
+    return None
+
+
+def open_chromium(url: str) -> None:
+    executable = find_chromium_executable()
+    profile_dir = os.path.join(
+        os.environ.get("LOCALAPPDATA", os.path.expanduser("~")),
+        "BetterCoolPC",
+        "chromium-profile",
+    )
+    os.makedirs(profile_dir, exist_ok=True)
+
+    if executable:
+        subprocess.Popen(
+            [
+                executable,
+                f"--user-data-dir={profile_dir}",
+                "--new-window",
+                url,
+            ],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            close_fds=True,
+        )
+        return
+
+    webbrowser.open(url)
 
 _SUFFIX_TRIM_PATTERNS = (
     re.compile(r"\s*【[^】]*】\s*$"),
@@ -139,9 +215,11 @@ def index() -> str:
             notebook_fields=get_notebook_field_defs(),
             min_price_raw=min_price_raw,
             max_price_raw=max_price_raw,
+            catalog_keys=[],
         )
 
     categories = list(category_blocks.keys())
+    catalog_keys = build_catalog_keys(category_blocks)
 
     selected_category_filters: dict[str, list[str]] = {}
     category_filter_defs: dict[str, list[str]] = {}
@@ -278,8 +356,28 @@ def index() -> str:
         bargain_mode=bargain_mode,
         result_groups=result_groups,
         notebook_fields=get_notebook_field_defs(),
+        catalog_keys=catalog_keys,
     )
 
 
+def main() -> None:
+    host = os.environ.get("COOLPC_HOST", "127.0.0.1")
+    port = int(os.environ.get("COOLPC_PORT", "5000"))
+    debug = os.environ.get("COOLPC_DEBUG", "0") == "1"
+    open_browser = os.environ.get("COOLPC_OPEN_BROWSER", "1") == "1"
+
+    if open_browser and not debug:
+        url = f"http://{host}:{port}"
+
+        def _open() -> None:
+            open_chromium(url)
+
+        threading.Timer(1.0, _open).start()
+
+    print(f"Better CoolPC 已啟動：http://{host}:{port}")
+    print("按 Ctrl+C 可結束服務")
+    app.run(host=host, port=port, debug=debug, use_reloader=debug)
+
+
 if __name__ == "__main__":
-    app.run(debug=True)
+    main()

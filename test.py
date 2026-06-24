@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import re
 import sys
 import time
@@ -77,6 +78,9 @@ def html_to_lines(html: str) -> list[str]:
 
 
 def save_debug_files(html: str, lines: list[str]) -> None:
+    if os.environ.get("COOLPC_DEBUG", "0") != "1":
+        return
+
     with open("coolpc_debug_raw.html", "w", encoding="utf-8") as f:
         f.write(html)
 
@@ -1505,8 +1509,9 @@ def main() -> None:
 
     if not category_blocks:
         print("[ERROR] 抓不到分類。")
-        print("已輸出 debug 檔案：coolpc_debug_raw.html、coolpc_debug_lines.txt")
-        print("請先打開 coolpc_debug_lines.txt，看前 300 行實際長什麼樣。")
+        if os.environ.get("COOLPC_DEBUG", "0") == "1":
+            print("已輸出 debug 檔案：coolpc_debug_raw.html、coolpc_debug_lines.txt")
+            print("請先打開 coolpc_debug_lines.txt，看前 300 行實際長什麼樣。")
         sys.exit(1)
 
     categories = list(category_blocks.keys())
